@@ -6,6 +6,7 @@ import { Assessment } from './pages/Assessment';
 import { Results } from './pages/Results';
 import { Learn } from './pages/Learn';
 import { About } from './pages/About';
+import { CheckoutSuccess } from './pages/CheckoutSuccess';
 
 const App: React.FC = () => {
   return (
@@ -15,8 +16,9 @@ const App: React.FC = () => {
           <Route path="/" element={<Home />} />
           <Route path="/assessment" element={<Assessment />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/success" element={<CheckoutSuccess />} />
           <Route path="/learn" element={<Learn />} />
-          <Route path="/about" element={<About />} /> 
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

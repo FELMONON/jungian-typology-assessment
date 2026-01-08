@@ -9,16 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^8.6.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.0.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-router-dom": "^7.11.0",
-    "recharts": "^3.6.0"
+    "recharts": "^3.6.0",
+    "stripe": "^20.1.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@vercel/node": "^5.5.16",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"

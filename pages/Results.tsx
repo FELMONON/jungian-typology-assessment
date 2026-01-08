@@ -4,6 +4,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { ResultsAnalysis } from '../types';
 import { FUNCTION_DESCRIPTIONS, ATTITUDE_DESCRIPTIONS, STACK_POSITIONS, THE_GRIP, TYPE_PHENOMENOLOGY, INDIVIDUATION_GUIDANCE } from '../data/questions';
 import { Button } from '../components/ui/Button';
+import { PaywallGate } from '../components/PaywallGate';
 import { AlertCircle, Download, RefreshCcw, Layers, ArrowDown, Loader2, BookOpen, AlertTriangle, Compass } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -12,6 +13,7 @@ export const Results: React.FC = () => {
   const navigate = useNavigate();
   const [results, setResults] = useState<ResultsAnalysis | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -21,6 +23,10 @@ export const Results: React.FC = () => {
     } else {
       navigate('/assessment');
     }
+
+    // Check if premium is unlocked
+    const unlocked = localStorage.getItem('jungian_assessment_unlocked') === 'true';
+    setIsUnlocked(unlocked);
   }, [navigate]);
 
   const generatePDF = async () => {
@@ -128,8 +134,8 @@ export const Results: React.FC = () => {
           </div>
         </div>
 
+        {/* FREE: Profile Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-          {/* Profile Chart */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-stone-100 flex flex-col items-center">
             <h3 className="text-lg font-bold text-jung-secondary mb-4 tracking-wider uppercase">Function-Attitude Energy</h3>
             <div className="w-full h-[400px]">
@@ -151,59 +157,124 @@ export const Results: React.FC = () => {
             </div>
           </div>
 
-          {/* Type Phenomenology */}
+          {/* FREE: Basic Attitude + Score Summary */}
           <div className="flex flex-col justify-center space-y-6">
-            <div className="bg-white p-6 rounded-lg border border-stone-200">
-              <h3 className="text-lg font-serif font-bold text-jung-dark mb-4 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-jung-primary" />
-                {typePhenomenology.typeName}
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <span className="font-bold text-stone-700">Focus: </span>
-                  <span className="text-stone-600">{typePhenomenology.focus}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-stone-700">Behavior: </span>
-                  <span className="text-stone-600">{typePhenomenology.behavior}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-stone-700">Historical Parallel: </span>
-                  <span className="text-stone-600 italic">{typePhenomenology.historicalExample}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Attitude Analysis */}
             <div className="bg-stone-50 p-6 rounded-lg border-l-4 border-stone-400">
               <h3 className="text-xl font-serif font-bold text-stone-800 mb-2">
                 General Attitude: {attitudeType}
               </h3>
-              <p className="text-stone-600 text-sm mb-4">
-                {attitude.desc}
+              <p className="text-stone-600 text-sm">
+                Your energy naturally flows {results.attitudeScore > 0 ? 'outward toward the external world' : 'inward toward your inner experience'}.
               </p>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-white p-3 rounded border border-stone-100">
-                  <span className="font-bold text-emerald-700 block mb-1">Strengths</span>
-                  {attitude.positive}
-                </div>
-                <div className="bg-white p-3 rounded border border-stone-100">
-                  <span className="font-bold text-red-700 block mb-1">Shadow</span>
-                  {attitude.negative}
-                </div>
-              </div>
             </div>
 
             {results.isUndifferentiated && (
               <div className="flex items-start gap-3 p-4 bg-amber-50 text-amber-900 rounded-md">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <strong>Differentiation Note:</strong> Your profile is relatively balanced (undifferentiated). The stack below is a theoretical projection based on your highest score, but you may not feel strongly bound to this specific hierarchy.
+                  <strong>Differentiation Note:</strong> Your profile is relatively balanced. The analysis below shows your theoretical function hierarchy.
                 </div>
               </div>
             )}
+
+            {/* FREE: Quick Stack Preview */}
+            <div className="bg-white p-6 rounded-lg border border-stone-200">
+              <h3 className="text-lg font-serif font-bold text-jung-dark mb-4">Your Function Stack</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-stone-100">
+                  <span className="font-medium text-jung-primary">1. Dominant</span>
+                  <span className="font-bold">{results.stack.dominant.function}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-stone-100">
+                  <span className="font-medium text-jung-accent">2. Auxiliary</span>
+                  <span className="font-bold">{results.stack.auxiliary.function}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-stone-100">
+                  <span className="font-medium text-stone-500">3. Tertiary</span>
+                  <span className="font-bold">{results.stack.tertiary.function}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="font-medium text-stone-400">4. Inferior</span>
+                  <span className="font-bold">{results.stack.inferior.function}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* FREE: Score Breakdown - Moved up */}
+        <section className="mb-8">
+          <h2 className="text-xl font-serif font-bold text-jung-dark mb-6 border-b border-stone-200 pb-2">Your 8-Function Scores</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {barData.map((item) => (
+              <div key={item.function} className="bg-white p-4 rounded border border-stone-100 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="font-bold text-stone-700">{FUNCTION_DESCRIPTIONS[item.function].title}</span>
+                  <span className="text-xs text-stone-400">{item.function}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-24 bg-stone-100 h-2 rounded-full">
+                    <div
+                      className="bg-jung-primary h-full rounded-full transition-all"
+                      style={{ width: `${item.score}%` }}
+                    />
+                  </div>
+                  <span className="font-mono font-bold text-stone-500 w-8 text-right">{item.score}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* PAYWALL GATE - Show if not unlocked */}
+        {!isUnlocked && <PaywallGate />}
+
+        {/* PREMIUM CONTENT - Only show if unlocked */}
+        {isUnlocked && (
+          <>
+            {/* Type Phenomenology */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+              <div className="bg-white p-6 rounded-lg border border-stone-200">
+                <h3 className="text-lg font-serif font-bold text-jung-dark mb-4 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-jung-primary" />
+                  {typePhenomenology.typeName}
+                </h3>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <span className="font-bold text-stone-700">Focus: </span>
+                    <span className="text-stone-600">{typePhenomenology.focus}</span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-stone-700">Behavior: </span>
+                    <span className="text-stone-600">{typePhenomenology.behavior}</span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-stone-700">Historical Parallel: </span>
+                    <span className="text-stone-600 italic">{typePhenomenology.historicalExample}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Full Attitude Analysis */}
+              <div className="bg-stone-50 p-6 rounded-lg border-l-4 border-stone-400">
+                <h3 className="text-xl font-serif font-bold text-stone-800 mb-2">
+                  General Attitude: {attitudeType}
+                </h3>
+                <p className="text-stone-600 text-sm mb-4">
+                  {attitude.desc}
+                </p>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="bg-white p-3 rounded border border-stone-100">
+                    <span className="font-bold text-emerald-700 block mb-1">Strengths</span>
+                    {attitude.positive}
+                  </div>
+                  <div className="bg-white p-3 rounded border border-stone-100">
+                    <span className="font-bold text-red-700 block mb-1">Shadow</span>
+                    {attitude.negative}
+                  </div>
+                </div>
+              </div>
+            </div>
 
         {/* THE ARCHETYPAL STACK */}
         <section className="mb-16">
@@ -398,30 +469,8 @@ export const Results: React.FC = () => {
             </p>
           </div>
         </section>
-
-        {/* Full Score Breakdown */}
-        <section className="mb-8">
-          <h2 className="text-xl font-serif font-bold text-jung-dark mb-6 border-b border-stone-200 pb-2">Complete 8-Function Score Data</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {barData.map((item) => (
-              <div key={item.function} className="bg-white p-4 rounded border border-stone-100 flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="font-bold text-stone-700">{FUNCTION_DESCRIPTIONS[item.function].title}</span>
-                  <span className="text-xs text-stone-400">{item.function}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-24 bg-stone-100 h-2 rounded-full">
-                    <div
-                      className="bg-jung-primary h-full rounded-full transition-all"
-                      style={{ width: `${item.score}%` }}
-                    />
-                  </div>
-                  <span className="font-mono font-bold text-stone-500 w-8 text-right">{item.score}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+          </>
+        )}
 
         {/* Footer */}
         <div className="text-center text-xs text-stone-400 pt-6 border-t border-stone-200">
@@ -432,17 +481,19 @@ export const Results: React.FC = () => {
 
       {/* Actions */}
       <div className="flex justify-center gap-4 border-t border-stone-200 pt-8 mt-8">
-        <Button onClick={generatePDF} disabled={isGeneratingPdf}>
-          {isGeneratingPdf ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating PDF...
-            </>
-          ) : (
-            <>
-              <Download className="mr-2 h-4 w-4" /> Download PDF
-            </>
-          )}
-        </Button>
+        {isUnlocked && (
+          <Button onClick={generatePDF} disabled={isGeneratingPdf}>
+            {isGeneratingPdf ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating PDF...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" /> Download PDF
+              </>
+            )}
+          </Button>
+        )}
         <Button variant="outline" onClick={() => {
           localStorage.removeItem('jungian_assessment_progress');
           localStorage.removeItem('jungian_assessment_results');
