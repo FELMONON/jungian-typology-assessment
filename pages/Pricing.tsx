@@ -62,6 +62,7 @@ const TIERS: Tier[] = [
       'Inferior-function growth edge',
       'Stress and relationship patterns',
       'Practical reflection prompts',
+      'The Function Stack in Depth guide (PDF)',
       'One-time CAD purchase',
     ],
     buttonText: `Review Insight — ${discountedPriceLabel(PRICING.insight.amount)}`,
@@ -94,6 +95,7 @@ const COMPARISON_FEATURES = [
   { name: 'Developmental edge report', free: false, insight: true, mastery: true },
   { name: 'Stress pattern map', free: false, insight: true, mastery: true },
   { name: 'Practical reflection prompts', free: false, insight: true, mastery: true },
+  { name: 'Type Depth Guide (PDF)', free: false, insight: true, mastery: true },
   { name: 'AI Type Guide', free: false, insight: false, mastery: true },
   { name: 'Reassessment tracking', free: false, insight: false, mastery: true },
 ];

@@ -196,7 +196,7 @@ const pricingTiers: HomePricingTier[] = [
     originalPrice: PRICING.insight.price,
     priceNote: `${EMAIL_CAPTURE_OFFER.code} auto-applies on Stripe`,
     description: 'Turn your result into a practical interpretation.',
-    features: ['Developmental edge', 'Stress-pattern map', 'Relationship pattern', 'Practice prompts'],
+    features: ['Developmental edge', 'Stress-pattern map', 'Relationship pattern', 'Type Depth Guide (PDF)'],
     cta: `View Insight — ${discountedPriceLabel(PRICING.insight.amount)}`,
     highlighted: true,
   },

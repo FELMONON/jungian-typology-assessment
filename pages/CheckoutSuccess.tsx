@@ -29,7 +29,7 @@ const UNLOCKED_FEATURES = {
     { icon: Heart, text: 'Relationship-pattern reflection' },
     { icon: Briefcase, text: 'Work-pattern reflection prompts' },
     { icon: Compass, text: 'Practical reflection prompts' },
-    { icon: Download, text: 'Downloadable result archive' },
+    { icon: Download, text: 'The Function Stack in Depth guide (PDF)' },
     { icon: RefreshCcw, text: 'Restore access by signing in with the purchase email' },
   ],
   mastery: [
@@ -39,10 +39,12 @@ const UNLOCKED_FEATURES = {
     { icon: AlertTriangle, text: 'Stress-pattern reflection' },
     { icon: Heart, text: 'Relationship-pattern reflection' },
     { icon: Briefcase, text: 'Work-pattern reflection prompts' },
-    { icon: Download, text: 'Downloadable result archive' },
+    { icon: Download, text: 'The Function Stack in Depth guide (PDF)' },
     { icon: RefreshCcw, text: 'Restore access by signing in with the purchase email' },
   ],
 } satisfies Record<PaidTierId, Array<{ icon: LucideIcon; text: string }>>;
+
+const TYPE_DEPTH_GUIDE_URL = '/downloads/typejung-type-depth-guide.pdf';
 
 const POST_PURCHASE_INVITE_GOAL = 3;
 const POST_PURCHASE_CAMPAIGN = 'customer_referral';
@@ -398,6 +400,37 @@ export const CheckoutSuccess: React.FC = () => {
           <p className="text-sm text-jung-muted">
             You can return to this unlocked result from this browser. Sign in with the purchase email to restore access across devices{purchasedTier === 'mastery' ? ' and use the AI Type Guide' : ''}.
           </p>
+        </div>
+
+        <div className="mb-8 rounded-lg border border-jung-dark bg-jung-dark p-5 text-white shadow-lg sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/55">
+                Included with your report
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-semibold text-white">
+                The Function Stack in Depth
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-white/75">
+                A field guide to all eight functions, the stack positions, the grip under stress,
+                and how the pattern matures. Keep it next to your report.
+              </p>
+            </div>
+            <a
+              href={TYPE_DEPTH_GUIDE_URL}
+              download
+              onClick={() =>
+                trackEvent('type_depth_guide_downloaded', {
+                  source: 'checkout_success',
+                  tier: purchasedTier,
+                })
+              }
+              className="inline-flex min-h-12 flex-none items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-jung-dark transition hover:-translate-y-px hover:bg-jung-accent-light"
+            >
+              <Download className="h-4 w-4" />
+              Download the guide (PDF)
+            </a>
+          </div>
         </div>
 
         {purchasedTier === 'insight' && (
