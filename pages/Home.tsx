@@ -112,6 +112,7 @@ const reportQuestions = [
   'Your stress pattern is framed as concrete signals, not vague type lore.',
   'Relationship reflection translates the map into conflict and repair patterns.',
   'Practice prompts turn the result into one thing to test this week.',
+  'The Function Stack in Depth: a 15-page theory guide (PDF) comes with every report.',
 ];
 
 const lockedPreview = [

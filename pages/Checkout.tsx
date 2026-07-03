@@ -38,6 +38,7 @@ const CHECKOUT_DETAILS: Record<PaidTierId, CheckoutTierDetails> = {
       'Inferior-function analysis tied to your dominant axis',
       'Stress, relationship, and work-pattern interpretation',
       'Practical reflection prompts for the next week',
+      'The Function Stack in Depth — 15-page theory guide (PDF)',
       'Unlocked result access in this browser, with account restore after sign-in',
     ],
     previewModules: [
@@ -57,6 +58,7 @@ const CHECKOUT_DETAILS: Record<PaidTierId, CheckoutTierDetails> = {
       'AI Type Guide for follow-up reflection questions',
       'Individuation roadmap and practice plan',
       'Growth exercises tailored to your cognitive stack',
+      'The Function Stack in Depth — 15-page theory guide (PDF)',
       'Account-based guide access after sign-in',
     ],
     previewModules: [

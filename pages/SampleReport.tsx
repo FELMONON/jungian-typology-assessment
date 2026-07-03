@@ -321,7 +321,7 @@ export const SampleReport: React.FC = () => {
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-jung-muted">Insight</p>
                 <p className="mt-2 text-2xl font-semibold text-jung-dark">{discountedPriceLabel(PRICING.insight.amount)}</p>
                 <p className="mt-1 text-xs leading-5 text-jung-secondary">
-                  <span className="line-through">{PRICING.insight.price}</span> before {EMAIL_CAPTURE_OFFER.code}. Depth report, stress-pattern map, relationship-pattern reflection, practices.
+                  <span className="line-through">{PRICING.insight.price}</span> before {EMAIL_CAPTURE_OFFER.code}. Depth report, stress-pattern map, relationship-pattern reflection, practices, plus the 15-page Function Stack in Depth guide (PDF).
                 </p>
               </div>
               <div className="rounded-lg border border-jung-border bg-jung-base p-4">

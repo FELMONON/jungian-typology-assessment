@@ -454,6 +454,9 @@ const LockedPremiumPreview: React.FC<{
           >
             Unlock my edge - {offerPrice}
           </Button>
+          <p className="mt-3 text-xs leading-5 text-jung-secondary">
+            Includes <span className="font-semibold text-jung-dark">The Function Stack in Depth</span> — a 15-page theory guide (PDF) covering all eight functions, the stack, and the grip.
+          </p>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-semibold text-jung-secondary">
             <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-jung-accent" />7-day money-back</span>
             <span className="inline-flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-jung-accent" />One-time, no subscription</span>
