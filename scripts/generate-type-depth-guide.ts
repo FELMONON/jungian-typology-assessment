@@ -103,7 +103,7 @@ const stackEntries = (['dominant', 'auxiliary', 'tertiary', 'inferior'] as const
   </article>`;
 }).join('\n');
 
-const gripEntries = GRIP_ORDER.map((code) => {
+const gripEntry = (code: string) => {
   const g = THE_GRIP[code];
   if (!g) return '';
   return `
@@ -116,7 +116,12 @@ const gripEntries = GRIP_ORDER.map((code) => {
       <div><p class="label">What helps</p><p class="body small">${esc(g.recovery)}</p></div>
     </div>
   </article>`;
-}).join('\n');
+};
+
+// 3 + 3 + 2 across three sheets so no page carries a lone orphaned entry.
+const gripEntriesFirst = GRIP_ORDER.slice(0, 3).map(gripEntry).join('\n');
+const gripEntriesSecond = GRIP_ORDER.slice(3, 6).map(gripEntry).join('\n');
+const gripEntriesThird = GRIP_ORDER.slice(6).map(gripEntry).join('\n');
 
 const individuationStages = INDIVIDUATION_GUIDANCE.stages.map((stage) => `
   <article class="stage-entry">
@@ -212,7 +217,8 @@ const html = `<!DOCTYPE html>
   .fn-glyph.sm { width: 30px; height: 30px; font-size: 14px; border-radius: 6px; }
 
   /* Cover */
-  .cover { display: flex; flex-direction: column; justify-content: space-between; background: var(--paper); }
+  .cover { position: relative; display: flex; flex-direction: column; justify-content: space-between; background: var(--paper); overflow: hidden; }
+  .cover-plate { position: absolute; right: -110px; top: 96px; width: 460px; height: 460px; }
   .cover .brand { display: flex; align-items: baseline; gap: 10px; }
   .cover .brand .name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; }
   .cover .brand .tag { font-family: 'Spline Sans Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
@@ -256,6 +262,29 @@ const html = `<!DOCTYPE html>
 <body>
 
 <section class="sheet cover">
+    <svg class="cover-plate" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="200" cy="200" r="37.5" fill="none" stroke="#20492f" stroke-width="0.6" stroke-dasharray="2 4" opacity="0.24"/>
+      <circle cx="200" cy="200" r="75.0" fill="none" stroke="#20492f" stroke-width="0.6" stroke-dasharray="2 4" opacity="0.24"/>
+      <circle cx="200" cy="200" r="112.5" fill="none" stroke="#20492f" stroke-width="0.6" stroke-dasharray="2 4" opacity="0.24"/>
+      <circle cx="200" cy="200" r="150.0" fill="none" stroke="#20492f" stroke-width="1" stroke-dasharray="none" opacity="0.34"/>
+      <line x1="200" y1="200" x2="200.0" y2="50.0" stroke="#20492f" stroke-width="0.6" opacity="0.28"/>
+      <line x1="200" y1="200" x2="306.1" y2="93.9" stroke="#20492f" stroke-width="0.6" opacity="0.28"/>
+      <line x1="200" y1="200" x2="350.0" y2="200.0" stroke="#20492f" stroke-width="0.6" opacity="0.28"/>
+      <line x1="200" y1="200" x2="306.1" y2="306.1" stroke="#20492f" stroke-width="0.6" opacity="0.28"/>
+      <line x1="200" y1="200" x2="200.0" y2="350.0" stroke="#20492f" stroke-width="0.6" opacity="0.28"/>
+      <line x1="200" y1="200" x2="93.9" y2="306.1" stroke="#20492f" stroke-width="0.6" opacity="0.28"/>
+      <line x1="200" y1="200" x2="50.0" y2="200.0" stroke="#20492f" stroke-width="0.6" opacity="0.28"/>
+      <line x1="200" y1="200" x2="93.9" y2="93.9" stroke="#20492f" stroke-width="0.6" opacity="0.28"/>
+      <polygon points="200.0,77.0 275.3,124.7 287.0,200.0 257.3,257.3 200.0,273.5 153.3,246.7 143.0,200.0 174.5,174.5" fill="#20492f" fill-opacity="0.07" stroke="#20492f" stroke-width="1.1" stroke-opacity="0.42" stroke-linejoin="round"/>
+      <circle cx="200.0" cy="77.0" r="3" fill="#20492f" opacity="0.5"/>
+      <circle cx="275.3" cy="124.7" r="3" fill="#20492f" opacity="0.5"/>
+      <circle cx="287.0" cy="200.0" r="3" fill="#20492f" opacity="0.5"/>
+      <circle cx="257.3" cy="257.3" r="3" fill="#20492f" opacity="0.5"/>
+      <circle cx="200.0" cy="273.5" r="3" fill="#20492f" opacity="0.5"/>
+      <circle cx="153.3" cy="246.7" r="3" fill="#20492f" opacity="0.5"/>
+      <circle cx="143.0" cy="200.0" r="3" fill="#20492f" opacity="0.5"/>
+      <circle cx="174.5" cy="174.5" r="3" fill="#20492f" opacity="0.5"/>
+    </svg>
   <div class="brand">
     <span class="name">TypeJung</span>
     <span class="tag">Free function-stack map</span>
@@ -323,7 +352,21 @@ ${functionPages}
   <p class="figure-label">Fig. 08 — The grip</p>
   <h2>Part V — What stress does to each pattern.</h2>
   <p class="body" style="margin:14px 0 6px;">When the dominant function is exhausted or defeated, the inferior erupts &mdash; archaic, moody, and unlike your ordinary self. Jung&rsquo;s followers call this the grip. Find your dominant below.</p>
-  ${gripEntries}
+  ${gripEntriesFirst}
+</section>
+
+<section class="sheet">
+  <p class="figure-label">Fig. 08 — The grip, continued</p>
+  ${gripEntriesSecond}
+</section>
+
+<section class="sheet">
+  <p class="figure-label">Fig. 08 — The grip, continued</p>
+  ${gripEntriesThird}
+  <div class="intro-note" style="margin-top:24px;">
+    <p class="label">Reading your own grip</p>
+    <p class="body small" style="margin-top:8px;">The grip is a state, not a verdict. It passes fastest when it is recognized early and named plainly: &ldquo;my inferior function is up.&rdquo; Match your dominant above, learn your two or three earliest signals, and keep the recovery moves somewhere you will actually see them under stress.</p>
+  </div>
 </section>
 
 <section class="sheet">
