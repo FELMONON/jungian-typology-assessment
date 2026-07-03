@@ -679,10 +679,10 @@ export const Assessment: React.FC = () => {
         )}
 
         {currentPage === 0 && (
-          <div className="mb-5 hidden rounded-lg border border-jung-border bg-jung-surface p-3 sm:mb-8 sm:block sm:p-4">
+          <div className="mb-4 rounded-lg border border-jung-border bg-jung-surface p-3 sm:mb-8 sm:p-4">
             <div className="flex items-start gap-3 text-sm text-jung-secondary">
               <Info className="mt-0.5 h-4 w-4 flex-none text-jung-accent" />
-              <p>
+              <p className="text-[13px] leading-5 sm:text-sm sm:leading-6">
                 Answer from the first pattern that actually happens, not the version you think you should have. The "none" option is valid when the question misses you.
               </p>
             </div>

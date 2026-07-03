@@ -1481,8 +1481,136 @@ export const Results: React.FC = () => {
 
         <ResultReaction completedAt={results.completedAt} />
 
+
+        {inboundSharedResultSlug && (
+          <section className="mb-8 overflow-hidden rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 shadow-sm">
+            <div className="grid gap-0 lg:grid-cols-[1fr_26rem]">
+              <div className="p-5 sm:p-6">
+                <p className="text-label">Reply to the shared map</p>
+                <h2 className="mt-2 text-2xl font-semibold text-jung-dark">Send your map back while the comparison is fresh.</h2>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-jung-secondary">
+                  You arrived from someone else's TypeJung result. Share your own map back so both dominant-inferior axes can sit in the same conversation.
+                </p>
+              </div>
+              <div className="border-t border-jung-accent-muted bg-jung-surface p-5 sm:p-6 lg:border-l lg:border-t-0">
+                <div className="flex items-center gap-2 text-sm font-semibold text-jung-dark">
+                  <Share2 className="h-4 w-4 text-jung-accent" />
+                  Return-share prompt
+                </div>
+                <p className="mt-3 text-sm leading-6 text-jung-secondary">
+                  This creates your compare page and copies a reply that includes both maps.
+                </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <Button
+                    variant="accent"
+                    className="w-full"
+                    onClick={copyReturnCompareReply}
+                    disabled={isPreparingReferral}
+                    leftIcon={isPreparingReferral ? <Loader2 className="h-4 w-4 animate-spin" /> : returnCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  >
+                    {isPreparingReferral ? 'Preparing reply' : returnCopied ? 'Reply copied' : 'Copy reply'}
+                  </Button>
+                  {inboundOriginalShareUrl && (
+                    <Button variant="outline" className="w-full" onClick={openInboundSharedResult} leftIcon={<Link2 className="h-4 w-4" />}>
+                      Open their map
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+
+        <p className="figure-label mb-5 mt-2">Part 01 — Your free map</p>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_0.72fr]">
+          <EnergyBars results={results} />
+
+          <div className="grid gap-6">
+            <div className="card-premium p-6 sm:p-8">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-jung-accent-light text-jung-accent">
+                  <ShieldCheck className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-label">Answer consistency signal</p>
+                  <h2 className="text-2xl font-semibold text-jung-dark">{results.reliability.label}</h2>
+                </div>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-jung-border-light">
+                <div className="h-full rounded-full bg-jung-accent" style={{ width: `${results.reliability.score}%` }} />
+              </div>
+              <div className="mt-5 space-y-3">
+                {results.reliability.notes.map((note) => (
+                  <p key={note} className="text-sm leading-6 text-jung-secondary">{note}</p>
+                ))}
+              </div>
+            </div>
+
+            <div className="card-premium p-6 sm:p-8">
+              <p className="text-label">Attitude</p>
+              <h2 className="mt-2 text-2xl font-semibold text-jung-dark">
+                {(results.attitude.balanced ?? Math.abs(results.attitude.introverted - results.attitude.extraverted) <= 6)
+                  ? 'Balanced direction'
+                  : `${ATTITUDE_LABELS[results.attitude.dominant]} direction`}
+              </h2>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-jung-border bg-jung-surface p-4">
+                  <p className="text-sm text-jung-muted">Introverted</p>
+                  <p className="mt-2 text-3xl font-semibold text-jung-dark">{results.attitude.introverted}%</p>
+                </div>
+                <div className="rounded-lg border border-jung-border bg-jung-surface p-4">
+                  <p className="text-sm text-jung-muted">Extraverted</p>
+                  <p className="mt-2 text-3xl font-semibold text-jung-dark">{results.attitude.extraverted}%</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-jung-secondary">{results.attitude.summary}</p>
+            </div>
+          </div>
+        </div>
+
+        <section className="mt-8">
+          <Hierarchy results={results} />
+        </section>
+
+        <section className="mt-8">
+          <SignalGrid results={results} />
+        </section>
+
+        {allFunctionScores.length > 0 && (
+          <section className="mt-8 rounded-lg border border-jung-border bg-jung-surface p-5 shadow-sm sm:p-6">
+            <div className="grid gap-6 lg:grid-cols-[0.72fr_1fr] lg:items-start">
+              <div>
+                <p className="text-label">Eight-function view</p>
+                <h2 className="mt-3 text-heading text-3xl text-jung-dark">
+                  {functionStackLabel} is the stack signal. The full map stays visible.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-jung-secondary">
+                  TypeJung derives the function-attitude pattern from your energy channels and attitude direction,
+                  then keeps all eight functions visible so close signals are easier to inspect.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {allFunctionScores.map((score) => (
+                  <div key={score.function} className="rounded-lg border border-jung-border bg-jung-base p-3">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="font-display text-xl font-semibold italic text-jung-dark">{score.function}</span>
+                      <span className="font-mono text-sm font-semibold text-jung-muted">{score.score}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-jung-border-light">
+                      <div className="h-full rounded-full bg-jung-accent" style={{ width: `${score.score}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {!premiumLoading && !isPremium && (
           <>
+            <p className="figure-label mb-5 mt-10">Part 02 — Optional paid depth</p>
             <LockedPremiumPreview
               results={results}
               dominantLabel={dominantLabel}
@@ -1595,129 +1723,7 @@ export const Results: React.FC = () => {
           </>
         )}
 
-        {inboundSharedResultSlug && (
-          <section className="mb-8 overflow-hidden rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 shadow-sm">
-            <div className="grid gap-0 lg:grid-cols-[1fr_26rem]">
-              <div className="p-5 sm:p-6">
-                <p className="text-label">Reply to the shared map</p>
-                <h2 className="mt-2 text-2xl font-semibold text-jung-dark">Send your map back while the comparison is fresh.</h2>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-jung-secondary">
-                  You arrived from someone else's TypeJung result. Share your own map back so both dominant-inferior axes can sit in the same conversation.
-                </p>
-              </div>
-              <div className="border-t border-jung-accent-muted bg-jung-surface p-5 sm:p-6 lg:border-l lg:border-t-0">
-                <div className="flex items-center gap-2 text-sm font-semibold text-jung-dark">
-                  <Share2 className="h-4 w-4 text-jung-accent" />
-                  Return-share prompt
-                </div>
-                <p className="mt-3 text-sm leading-6 text-jung-secondary">
-                  This creates your compare page and copies a reply that includes both maps.
-                </p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <Button
-                    variant="accent"
-                    className="w-full"
-                    onClick={copyReturnCompareReply}
-                    disabled={isPreparingReferral}
-                    leftIcon={isPreparingReferral ? <Loader2 className="h-4 w-4 animate-spin" /> : returnCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  >
-                    {isPreparingReferral ? 'Preparing reply' : returnCopied ? 'Reply copied' : 'Copy reply'}
-                  </Button>
-                  {inboundOriginalShareUrl && (
-                    <Button variant="outline" className="w-full" onClick={openInboundSharedResult} leftIcon={<Link2 className="h-4 w-4" />}>
-                      Open their map
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-
-        <div className="grid gap-6 lg:grid-cols-[1fr_0.72fr]">
-          <EnergyBars results={results} />
-
-          <div className="grid gap-6">
-            <div className="card-premium p-6 sm:p-8">
-              <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-jung-accent-light text-jung-accent">
-                  <ShieldCheck className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-label">Answer consistency signal</p>
-                  <h2 className="text-2xl font-semibold text-jung-dark">{results.reliability.label}</h2>
-                </div>
-              </div>
-              <div className="h-3 overflow-hidden rounded-full bg-jung-border-light">
-                <div className="h-full rounded-full bg-jung-accent" style={{ width: `${results.reliability.score}%` }} />
-              </div>
-              <div className="mt-5 space-y-3">
-                {results.reliability.notes.map((note) => (
-                  <p key={note} className="text-sm leading-6 text-jung-secondary">{note}</p>
-                ))}
-              </div>
-            </div>
-
-            <div className="card-premium p-6 sm:p-8">
-              <p className="text-label">Attitude</p>
-              <h2 className="mt-2 text-2xl font-semibold text-jung-dark">
-                {(results.attitude.balanced ?? Math.abs(results.attitude.introverted - results.attitude.extraverted) <= 6)
-                  ? 'Balanced direction'
-                  : `${ATTITUDE_LABELS[results.attitude.dominant]} direction`}
-              </h2>
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-jung-border bg-jung-surface p-4">
-                  <p className="text-sm text-jung-muted">Introverted</p>
-                  <p className="mt-2 text-3xl font-semibold text-jung-dark">{results.attitude.introverted}%</p>
-                </div>
-                <div className="rounded-lg border border-jung-border bg-jung-surface p-4">
-                  <p className="text-sm text-jung-muted">Extraverted</p>
-                  <p className="mt-2 text-3xl font-semibold text-jung-dark">{results.attitude.extraverted}%</p>
-                </div>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-jung-secondary">{results.attitude.summary}</p>
-            </div>
-          </div>
-        </div>
-
-        <section className="mt-8">
-          <Hierarchy results={results} />
-        </section>
-
-        <section className="mt-8">
-          <SignalGrid results={results} />
-        </section>
-
-        {allFunctionScores.length > 0 && (
-          <section className="mt-8 rounded-lg border border-jung-border bg-jung-surface p-5 shadow-sm sm:p-6">
-            <div className="grid gap-6 lg:grid-cols-[0.72fr_1fr] lg:items-start">
-              <div>
-                <p className="text-label">Eight-function view</p>
-                <h2 className="mt-3 text-heading text-3xl text-jung-dark">
-                  {functionStackLabel} is the stack signal. The full map stays visible.
-                </h2>
-                <p className="mt-4 text-sm leading-7 text-jung-secondary">
-                  TypeJung derives the function-attitude pattern from your energy channels and attitude direction,
-                  then keeps all eight functions visible so close signals are easier to inspect.
-                </p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {allFunctionScores.map((score) => (
-                  <div key={score.function} className="rounded-lg border border-jung-border bg-jung-base p-3">
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <span className="font-display text-xl font-semibold italic text-jung-dark">{score.function}</span>
-                      <span className="font-mono text-sm font-semibold text-jung-muted">{score.score}%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-jung-border-light">
-                      <div className="h-full rounded-full bg-jung-accent" style={{ width: `${score.score}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
+        <p className="figure-label mb-5 mt-10">Part 03 — Share, save, and next steps</p>
 
         <section className="mb-8 overflow-hidden rounded-lg border border-jung-border bg-jung-surface shadow-sm">
           <div className="grid gap-0 lg:grid-cols-[1fr_28rem]">
