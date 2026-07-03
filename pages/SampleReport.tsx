@@ -524,11 +524,11 @@ export const SampleReport: React.FC = () => {
       <section className="editorial-container py-8">
         <p className="text-xs leading-5 text-jung-muted">
           TypeJung is for reflection and self-understanding, not medical, therapeutic, hiring, or diagnostic decision-making. See the{' '}
-          <Link className="font-semibold text-jung-accent hover:text-jung-accent-hover" to="/terms">
+          <Link className="inline-block -my-3.5 py-3.5 font-semibold text-jung-accent hover:text-jung-accent-hover" to="/terms">
             Terms
           </Link>{' '}
           and{' '}
-          <Link className="font-semibold text-jung-accent hover:text-jung-accent-hover" to="/privacy">
+          <Link className="inline-block -my-3.5 py-3.5 font-semibold text-jung-accent hover:text-jung-accent-hover" to="/privacy">
             Privacy Policy
           </Link>
           .

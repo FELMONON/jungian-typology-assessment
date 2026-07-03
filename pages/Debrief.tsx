@@ -127,7 +127,7 @@ export const Debrief: React.FC = () => {
           </p>
           <p className="mt-2 text-xs leading-5 text-jung-muted">
             No result yet?{' '}
-            <Link to="/assessment" className="font-semibold text-jung-accent hover:underline">Take the free map first</Link>.
+            <Link to="/assessment" className="inline-block -my-3 py-3 font-semibold text-jung-accent hover:underline">Take the free map first</Link>.
           </p>
 
           <section className="mt-8 rounded-lg border border-jung-border bg-jung-surface p-5 shadow-sm">

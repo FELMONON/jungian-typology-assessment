@@ -552,7 +552,7 @@ export const Assessment: React.FC = () => {
                             trackEvent('assessment_intent_selected', { intent: next });
                           }
                         }}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        className={`inline-flex min-h-11 items-center rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
                           active
                             ? 'border-jung-accent-muted bg-white text-jung-dark'
                             : 'border-white/15 bg-white/8 text-white/75 hover:border-white/35 hover:text-white'

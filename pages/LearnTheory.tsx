@@ -602,7 +602,7 @@ export const LearnTheory: React.FC = () => {
             <p className="text-body text-jung-secondary mb-8 max-w-xl mx-auto font-serif">
               Take the assessment to discover your current cognitive profile. Use it as a mirror—not a label.
             </p>
-            <Link to="/">
+            <Link to="/assessment" className="inline-block">
               <Button variant="accent" size="lg">
                 Begin Your Assessment
                 <ArrowRight className="w-5 h-5 ml-2" />

@@ -201,7 +201,7 @@ export const Methodology: React.FC = () => {
             Build my free map
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link to="/sample-report" className="text-sm font-semibold text-jung-accent hover:underline">
+          <Link to="/sample-report" className="inline-flex min-h-11 items-center text-sm font-semibold text-jung-accent hover:underline">
             See a full sample report
           </Link>
         </div>

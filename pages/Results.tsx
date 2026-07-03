@@ -475,7 +475,7 @@ const LockedPremiumPreview: React.FC<{
           <button
             type="button"
             onClick={() => onViewSampleReport('results_locked_preview')}
-            className="mt-4 text-xs font-semibold text-jung-accent hover:underline"
+            className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-jung-accent hover:underline"
           >
             See a full sample report
           </button>
@@ -2163,7 +2163,7 @@ export const Results: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => viewSampleReport('results_mobile_sticky')}
-                  className="link-ink font-semibold text-jung-secondary underline-offset-2 transition hover:text-jung-accent"
+                  className="link-ink -my-3.5 inline-block py-3.5 font-semibold text-jung-secondary underline-offset-2 transition hover:text-jung-accent"
                 >
                   See sample
                 </button>
