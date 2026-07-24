@@ -363,18 +363,18 @@ export const Home: React.FC = () => {
   const proofMetrics = [
     {
       value: formatProofNumber(publicStats?.assessmentCount, '20+'),
-      label: 'function maps generated',
-      note: 'live early-user count',
+      label: 'cognitive-function maps generated',
+      note: 'all eight functions, every map',
     },
     {
-      value: formatProofNumber(publicStats?.payingCustomerCount, 'Early'),
-      label: 'paying customers',
-      note: 'paid only after free map',
+      value: 'Free',
+      label: 'result before any paywall',
+      note: 'no card to see your map',
     },
     {
       value: '7 days',
       label: 'money-back guarantee',
-      note: 'one-time CAD upgrades',
+      note: 'one-time CAD, no subscription',
     },
   ];
 

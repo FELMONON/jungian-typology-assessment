@@ -17,12 +17,12 @@ import { createMasteryUpgradeSession } from './_lib/mastery-upgrade.js';
 
 const CHECKOUT_PRODUCT_COPY: Record<PaidTierId, { name: string; description: string }> = {
   insight: {
-    name: 'TypeJung Insight Package',
-    description: 'Deep TypeJung report with developmental edge analysis, stress-pattern reflection, relationship-pattern reflection, and practical prompts.',
+    name: 'TypeJung Insight Report',
+    description: 'Ten personalized interpretation sections built from your free map: function dynamics, archetypes, grip and recovery, relationships, work, individuation, shadow, growth, and dream reflection, plus the Function Stack in Depth guide (PDF).',
   },
   mastery: {
-    name: 'TypeJung Mastery Package',
-    description: 'Complete TypeJung experience with the deep report, AI Type Guide, tailored growth exercises, and individuation practice support.',
+    name: 'TypeJung Mastery Report',
+    description: 'The ten-section Insight report plus the AI Type Guide, tailored growth exercises, and an individuation practice roadmap for working with your result over time.',
   },
 };
 

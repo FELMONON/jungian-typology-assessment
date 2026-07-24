@@ -49,8 +49,8 @@ const CHECKOUT_DETAILS: Record<PaidTierId, CheckoutTierDetails> = {
     nextStep: 'Stripe handles payment securely in one step. After checkout, return to TypeJung and sign in with the purchase email if prompted so the ten-section report can be attached to your account.',
   },
   mastery: {
-    packageName: 'Mastery Package',
-    headline: 'Turn your result into an ongoing practice plan.',
+    packageName: 'Mastery Report',
+    headline: 'The ten-section report plus ongoing practice tools.',
     description:
       'Mastery includes everything in Insight plus the AI Type Guide, tailored growth exercises, and a practice roadmap for working with your cognitive stack.',
     includes: [
