@@ -29,24 +29,24 @@ type CheckoutTierDetails = {
 
 const CHECKOUT_DETAILS: Record<PaidTierId, CheckoutTierDetails> = {
   insight: {
-    packageName: 'Insight Package',
-    headline: 'Unlock the developmental edge behind the result you just saw.',
+    packageName: 'Insight Report',
+    headline: 'Get the ten-section interpretation behind the free map you just saw.',
     description:
-      'Insight starts with the dominant-to-inferior axis in your free TypeJung map, then opens the developmental edge, stress-pattern reflection, relationship-pattern reflection, and practical prompts.',
+      'The free map shows your scores, hierarchy, dominant-inferior axis, and consistency signal. Insight starts after that boundary with ten personalized sections across function dynamics, archetypes, grip and recovery, relationships, work, individuation, shadow, growth, and dream reflection.',
     includes: [
-      'Full developmental edge for this exact result',
-      'Inferior-function analysis tied to your dominant axis',
-      'Stress, relationship, and work-pattern interpretation',
-      'Practical reflection prompts for the next week',
+      'Ten personalized interpretation sections',
+      'Grip sequence with pressure and recovery cues',
+      'Relationship and work-pattern reflections',
+      'Archetype, shadow, individuation, growth, and dream prompts',
       'The Function Stack in Depth — 15-page theory guide (PDF)',
       'Unlocked result access in this browser, with account restore after sign-in',
     ],
     previewModules: [
-      { title: 'Developmental edge', body: 'The first paid section: what your inferior function may be asking you to build, tolerate, or integrate.' },
-      { title: 'Stress-pattern map', body: 'Concrete ways the axis can show up in conflict, pressure, avoidance, and relationship patterns.' },
-      { title: 'Practice prompts', body: 'Reflection exercises matched to the pattern in your free map.' },
+      { title: 'Grip sequence and recovery', body: 'A separate read of early pressure signals, escalation, and the grounded move that can restore choice.' },
+      { title: 'Relationship and work patterns', body: 'Two distinct sections for conflict, repair, feedback, pacing, and the conditions that strain your weaker channel.' },
+      { title: 'Shadow and growth prompts', body: 'Archetypal, shadow, individuation, growth, and dream-reflection sections that go beyond the free hierarchy.' },
     ],
-    nextStep: 'Stripe handles payment securely. After checkout, return to TypeJung and sign in with the purchase email if prompted so the unlocked report can be attached to your account.',
+    nextStep: 'Stripe handles payment securely in one step. After checkout, return to TypeJung and sign in with the purchase email if prompted so the ten-section report can be attached to your account.',
   },
   mastery: {
     packageName: 'Mastery Package',
@@ -115,8 +115,8 @@ export const Checkout: React.FC = () => {
   const [discountCopyStatus, setDiscountCopyStatus] = useState<'idle' | 'copied'>('idle');
   const [capturedEmail] = useState(readCapturedDiscountEmail);
   const [checkoutRecoveryEmail, setCheckoutRecoveryEmail] = useState(() => capturedEmail || '');
-  const [checkoutRecoveryOptIn, setCheckoutRecoveryOptIn] = useState(true);
-  const [showRecoveryEmailControls, setShowRecoveryEmailControls] = useState(() => !capturedEmail);
+  const [checkoutRecoveryOptIn, setCheckoutRecoveryOptIn] = useState(false);
+  const [showRecoveryEmailControls, setShowRecoveryEmailControls] = useState(false);
   const checkoutAxisTrackedRef = useRef<string | null>(null);
   const checkoutOpeningRef = useRef(false);
   const checkoutEmailInputRef = useRef<HTMLInputElement>(null);
@@ -298,18 +298,18 @@ export const Checkout: React.FC = () => {
   const hasCheckoutEmail = EMAIL_PATTERN.test(checkoutEmailCandidate.toLowerCase());
   const checkoutEmailDisplay = hasCheckoutEmail ? checkoutEmailCandidate : '';
   const checkoutEmailCardTitle = hasCheckoutEmail
-    ? checkoutRecoverySaveStatus === 'saved' ? 'Result path saved before Stripe' : 'Save this result path before Stripe'
-    : checkoutEmailCandidate ? 'Fix checkout email' : 'Checkout email required';
+    ? checkoutRecoverySaveStatus === 'saved' ? 'Optional recovery saved' : 'Optional recovery email ready'
+    : checkoutEmailCandidate ? 'Fix optional recovery email' : 'Optional recovery email';
   const checkoutEmailCardDescription = hasCheckoutEmail
     ? checkoutRecoverySaveStatus === 'saved'
       ? 'TypeJung saved the result axis, discount code, and checkout path so this session can be recovered if Stripe expires.'
-      : `Send the ${EMAIL_CAPTURE_OFFER.code} backup and this result path before opening Stripe. Then the receipt email and unlock handoff are ready.`
+      : `You can email yourself the ${EMAIL_CAPTURE_OFFER.code} backup and this result path before Stripe. This is optional and never blocks payment.`
     : checkoutEmailCandidate
-      ? 'That email is not valid yet. Fix it so the receipt and recovery link reach the right place.'
-      : 'Add your email. If Stripe times out or you get distracted, TypeJung sends one recovery link so you can restart without losing the result.';
+      ? 'That email is not valid yet. Fix it only if you want the optional recovery link.'
+      : 'Stripe collects the receipt email on the next screen. Add one here only if you also want TypeJung to save a recovery path before payment.';
   const checkoutEmailStatusLabel = hasCheckoutEmail
-    ? checkoutRecoverySaveStatus === 'saved' ? 'Saved' : 'Ready'
-    : checkoutEmailCandidate ? 'Fix email' : 'Required';
+    ? checkoutRecoverySaveStatus === 'saved' ? 'Saved' : 'Optional'
+    : checkoutEmailCandidate ? 'Fix email' : 'Optional';
   const checkoutHandoffItems = [
     {
       icon: CreditCard,
@@ -334,29 +334,22 @@ export const Checkout: React.FC = () => {
     },
   ] as const;
   const finalPriceLabel = tierPrice ? discountedPriceLabel(tierPrice.amount) : '';
-  const needsRecoverySave = checkoutRecoveryOptIn && hasCheckoutEmail && checkoutRecoverySaveStatus !== 'saved';
-  const paymentButtonText = !hasCheckoutEmail
-    ? 'Add email to continue'
-    : needsRecoverySave
-      ? checkoutRecoverySaveStatus === 'saving' ? 'Saving result path' : 'Save result path, then Stripe'
-      : finalPriceLabel ? `Pay ${finalPriceLabel} on Stripe` : 'Continue to Stripe';
+  const paymentButtonText = finalPriceLabel ? `Continue to Stripe - ${finalPriceLabel}` : 'Continue to Stripe';
   const mobilePaymentButtonText = isOpeningStripe
     ? 'Opening'
-    : checkoutRecoverySaveStatus === 'saving'
-      ? 'Saving'
-      : !hasCheckoutEmail ? 'Add email' : needsRecoverySave ? 'Save path' : finalPriceLabel ? `Pay ${finalPriceLabel}` : 'Pay';
+    : finalPriceLabel ? `Pay ${finalPriceLabel}` : 'Pay';
   const checkoutSteps = [
     {
-      icon: hasCheckoutEmail ? Check : Mail,
-      label: 'Email',
-      caption: hasCheckoutEmail ? 'Ready' : 'Required',
-      state: hasCheckoutEmail ? 'complete' : 'active',
+      icon: Check,
+      label: 'Map',
+      caption: 'Ready',
+      state: 'complete',
     },
     {
       icon: CreditCard,
       label: 'Stripe',
       caption: 'Payment',
-      state: hasCheckoutEmail ? 'active' : 'pending',
+      state: 'active',
     },
     {
       icon: FileText,
@@ -365,13 +358,7 @@ export const Checkout: React.FC = () => {
       state: 'pending',
     },
   ] as const;
-  const mobileStickyHint = hasCheckoutEmail
-    ? checkoutRecoveryOptIn
-      ? checkoutRecoverySaveStatus === 'saved'
-        ? `${EMAIL_CAPTURE_OFFER.code} saved. One-time CAD.`
-        : 'Save result path first. Then secure Stripe.'
-      : `${EMAIL_CAPTURE_OFFER.code} applied. One-time CAD.`
-    : 'Email first. Then secure Stripe.';
+  const mobileStickyHint = `${EMAIL_CAPTURE_OFFER.code} applied. Stripe collects the receipt email.`;
 
   const copyDiscountCode = useCallback(async () => {
     try {
@@ -548,25 +535,6 @@ export const Checkout: React.FC = () => {
     const validTypedRecoveryEmail = EMAIL_PATTERN.test(typedRecoveryEmail) ? typedRecoveryEmail : '';
     const checkoutCustomerEmail = validTypedRecoveryEmail || readCapturedDiscountEmail() || capturedEmail || user?.email || undefined;
 
-    if (!checkoutCustomerEmail) {
-      setShowRecoveryEmailControls(true);
-      setRecoveryEmailError('Enter an email before Stripe so the receipt and recovery link have somewhere to go.');
-      trackEvent('checkout_recovery_email_required', {
-        tier: paidTier,
-        source: checkoutSource,
-        acquisition_source: checkoutAttribution?.source || 'unknown',
-        utm_campaign: checkoutAttribution?.utmCampaign || 'unknown',
-        utm_source: checkoutAttribution?.utmSource || 'unknown',
-        has_result_axis: Boolean(savedResultAxis),
-      });
-
-      window.requestAnimationFrame(() => {
-        checkoutEmailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        checkoutEmailInputRef.current?.focus();
-      });
-      return;
-    }
-
     try {
       checkoutOpeningRef.current = true;
       setIsOpeningStripe(true);
@@ -648,55 +616,25 @@ export const Checkout: React.FC = () => {
     }
   }, [capturedEmail, checkoutAttribution, checkoutRecoveryEmail, checkoutRecoveryOptIn, finalPriceLabel, paidTier, rememberCheckoutRecoveryEmail, savedResultAxis, sendCheckoutRecoveryLead, tierPrice, user?.email]);
 
-  const focusCheckoutEmail = useCallback((source: string) => {
-    const typedEmail = checkoutRecoveryEmail.trim();
-
-    setShowRecoveryEmailControls(true);
-    setRecoveryEmailError(
-      typedEmail && !EMAIL_PATTERN.test(typedEmail.toLowerCase())
-        ? 'Enter a valid email address before Stripe.'
-        : null,
-    );
-    trackEvent('checkout_email_prompt_opened', {
-      tier: paidTier || 'unknown',
-      source,
-      has_typed_email: Boolean(typedEmail),
-      acquisition_source: checkoutAttribution?.source || 'unknown',
-    });
-
-    window.requestAnimationFrame(() => {
-      checkoutEmailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      checkoutEmailInputRef.current?.focus();
-    });
-  }, [checkoutAttribution?.source, checkoutRecoveryEmail, paidTier]);
-
   const handleCheckoutActionClick = useCallback(() => {
-    if (!hasCheckoutEmail) {
-      focusCheckoutEmail('checkout_primary_button');
-      return;
-    }
-
-    if (needsRecoverySave) {
-      void saveCheckoutRecoveryPath('checkout_primary_button');
-      return;
-    }
-
+    trackEvent('checkout_direct_stripe_clicked', {
+      source: 'checkout_primary_button',
+      tier: paidTier || 'unknown',
+      has_prefilled_email: hasCheckoutEmail,
+      recovery_opted_in: checkoutRecoveryOptIn,
+    });
     void startStripeCheckout();
-  }, [focusCheckoutEmail, hasCheckoutEmail, needsRecoverySave, saveCheckoutRecoveryPath, startStripeCheckout]);
+  }, [checkoutRecoveryOptIn, hasCheckoutEmail, paidTier, startStripeCheckout]);
 
   const handleMobilePaymentClick = useCallback(() => {
-    if (!hasCheckoutEmail) {
-      focusCheckoutEmail('checkout_mobile_sticky');
-      return;
-    }
-
-    if (needsRecoverySave) {
-      void saveCheckoutRecoveryPath('checkout_mobile_sticky');
-      return;
-    }
-
+    trackEvent('checkout_direct_stripe_clicked', {
+      source: 'checkout_mobile_sticky',
+      tier: paidTier || 'unknown',
+      has_prefilled_email: hasCheckoutEmail,
+      recovery_opted_in: checkoutRecoveryOptIn,
+    });
     void startStripeCheckout();
-  }, [focusCheckoutEmail, hasCheckoutEmail, needsRecoverySave, saveCheckoutRecoveryPath, startStripeCheckout]);
+  }, [checkoutRecoveryOptIn, hasCheckoutEmail, paidTier, startStripeCheckout]);
 
   const checkoutEmailCard = (
     <div className="mt-5 rounded-lg border border-jung-border bg-jung-base p-4">
@@ -721,14 +659,14 @@ export const Checkout: React.FC = () => {
             onClick={() => setShowRecoveryEmailControls((value) => !value)}
             className="mt-3 text-xs font-semibold text-jung-accent hover:underline"
           >
-            {showRecoveryEmailControls ? 'Hide email options' : hasCheckoutEmail ? 'Edit email options' : 'Add email'}
+            {showRecoveryEmailControls ? 'Hide recovery options' : hasCheckoutEmail ? 'Edit optional recovery' : 'Add optional recovery email'}
           </button>
         </div>
       </div>
       {showRecoveryEmailControls && (
         <div className="mt-3">
           <label className="sr-only" htmlFor="checkout-recovery-email">
-            Checkout email
+            Optional recovery email
           </label>
           <input
             ref={checkoutEmailInputRef}
@@ -761,7 +699,7 @@ export const Checkout: React.FC = () => {
               className="mt-1 h-4 w-4 rounded border-jung-border text-jung-accent accent-jung-accent focus:ring-jung-accent"
             />
             <span>
-              Email me this result path and {EMAIL_CAPTURE_OFFER.code} backup before Stripe if checkout expires. No subscription is created.
+              Optionally email me this result path and {EMAIL_CAPTURE_OFFER.code} backup before Stripe. Payment continues even when this is off.
             </span>
           </label>
           {checkoutRecoveryOptIn && hasCheckoutEmail && (
@@ -807,7 +745,9 @@ export const Checkout: React.FC = () => {
         </div>
       )}
       <p className="mt-3 text-[11px] leading-5 text-jung-muted">
-        {hasCheckoutEmail ? 'One-time purchase. No subscription is created.' : 'Required for receipt and checkout recovery. No subscription is created.'}
+        {hasCheckoutEmail
+          ? 'Optional TypeJung recovery is ready. Payment is still one click.'
+          : 'Stripe collects the receipt email on the next screen. No TypeJung recovery email is required.'}
       </p>
     </div>
   );
@@ -1144,14 +1084,12 @@ export const Checkout: React.FC = () => {
               ))}
             </div>
 
-            {checkoutEmailCard}
-
             <Button
               variant="accent"
               size="lg"
               className="mt-5 w-full"
               onClick={handleCheckoutActionClick}
-              disabled={isOpeningStripe || checkoutRecoverySaveStatus === 'saving'}
+              disabled={isOpeningStripe}
               rightIcon={!isOpeningStripe ? <ArrowRight className="h-5 w-5" /> : undefined}
             >
               {isOpeningStripe ? (
@@ -1165,8 +1103,10 @@ export const Checkout: React.FC = () => {
             </Button>
 
             <p className="mt-3 text-center text-xs leading-5 text-jung-muted">
-              Secure checkout via Stripe. You will confirm the discounted total before payment is collected.
+              One click opens secure Stripe. Stripe collects the receipt email and shows the discounted total before payment.
             </p>
+
+            {checkoutEmailCard}
 
             <div className="mt-5 border-y border-jung-border py-5">
               <div className="flex gap-3">
@@ -1257,7 +1197,7 @@ export const Checkout: React.FC = () => {
             size="sm"
             className="flex-none"
             onClick={handleMobilePaymentClick}
-            disabled={isOpeningStripe || checkoutRecoverySaveStatus === 'saving'}
+            disabled={isOpeningStripe}
             rightIcon={!isOpeningStripe ? <ArrowRight className="h-4 w-4" /> : undefined}
           >
             {mobilePaymentButtonText}

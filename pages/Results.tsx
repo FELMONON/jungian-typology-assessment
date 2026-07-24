@@ -1,22 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, Copy, CreditCard, Download, FileText, Link2, Loader2, Lock, LogIn, RefreshCcw, Save, Share2, ShieldCheck, Sparkles, UserCheck } from 'lucide-react';
+import { ArrowRight, Check, Copy, CreditCard, Download, FileText, Link2, Loader2, Lock, LogIn, RefreshCcw, Save, Share2, ShieldCheck, Sparkles } from 'lucide-react';
 import { ChatBot } from '../components/ChatBot';
 import { DiscountCaptureCard } from '../components/discount/DiscountCaptureCard';
 import { Button } from '../components/ui/Button';
 import { ATTITUDE_LABELS, AttitudeDirection, FUNCTION_LABELS, FunctionChannel, depthLayerMeta } from '../data/depthAssessment';
 import { discountedPriceLabel, EMAIL_CAPTURE_OFFER } from '../data/discount';
-import { DEBRIEF_OFFER } from '../data/debrief';
 import { readAssessmentIntent, INTENT_RESULT_FRAMING } from '../lib/assessment-intent';
 import { PRICING, type PaidTierId } from '../data/pricing';
-import { SUPPORT_EMAIL } from '../data/support';
 import { useAiAnalysis, type AnalysisInput, type PremiumAnalysis } from '../hooks/use-ai-analysis';
 import { useAuth } from '../hooks/use-auth';
 import { usePremiumStatus } from '../hooks/use-premium-status';
-import { AnalyticsEvents, trackEvent } from '../lib/analytics';
+import { AnalyticsEvents, getFunnelAnonymousId, trackEvent } from '../lib/analytics';
 import { pathWithSource, readAcquisitionSource } from '../lib/acquisition-source';
-import { resultUpgradeContextFromSource, type ResultUpgradeContext } from '../lib/result-upgrade-context';
+import { createDirectCheckoutSession } from '../lib/direct-checkout';
+import { writePendingCheckout } from '../lib/pending-checkout';
+import { resultUpgradeContextFromSource } from '../lib/result-upgrade-context';
 import { readUpgradeIntent } from '../lib/upgrade-intent';
 import { depthResultToLegacyAnalysisInput } from '../utils/depthCompatibility';
 import { DepthAssessmentResult, isDepthAssessmentResult } from '../utils/depthScoring';
@@ -48,32 +48,37 @@ const upgradeOptions: Array<{
   {
     tier: 'insight',
     label: 'Insight',
-    description: 'Best when you want the deeper report after the free map feels accurate.',
-    features: ['Developmental edge', 'Stress-pattern map', 'Practice prompts'],
-    preview: 'Unlocks a detailed interpretation of your inferior-function edge, stress-pattern reflection, and practice prompts.',
+    description: 'Ten personalized interpretation sections that begin where the free score map stops.',
+    features: [
+      'Function dynamics and archetypal pattern',
+      'Grip, relationship, and work reflections',
+      'Shadow, individuation, growth, and dream prompts',
+      '15-page Type Depth Guide (PDF)',
+    ],
+    preview: 'Adds ten distinct sections across function dynamics, grip and recovery, relationships, work, shadow, growth, individuation, and dream reflection.',
   },
   {
     tier: 'mastery',
     label: 'Mastery',
-    description: 'Best when you want the report plus AI Type Guide reflection prompts and exercises.',
+    description: 'The same ten-section report plus the AI Type Guide and ongoing practice tools.',
     features: ['Everything in Insight', 'AI Type Guide', 'Practice roadmap'],
-    preview: 'Adds guide questions, tailored exercises, and a roadmap for working with the result over time.',
+    preview: 'Adds follow-up guide questions, tailored exercises, and a roadmap for working with the report over time.',
   },
 ];
 
 const paidTierPrice = (tier: PaidTierId) => discountedPriceLabel(PRICING[tier].amount);
 
 const premiumReportSectionConfig: Array<{ key: keyof PremiumAnalysis; title: string }> = [
-  { key: 'overview', title: 'Overview' },
-  { key: 'functionAnalysis', title: 'Function analysis' },
+  { key: 'overview', title: 'Pattern synthesis' },
+  { key: 'functionAnalysis', title: 'Function dynamics' },
   { key: 'archetypes', title: 'Archetypal pattern' },
-  { key: 'theGrip', title: 'Grip and stress pattern' },
-  { key: 'relationships', title: 'Relationships' },
-  { key: 'career', title: 'Work and vocation' },
+  { key: 'theGrip', title: 'Grip sequence and recovery' },
+  { key: 'relationships', title: 'Relationship pattern and repair' },
+  { key: 'career', title: 'Work conditions and friction' },
   { key: 'individuation', title: 'Individuation path' },
-  { key: 'shadow', title: 'Shadow material' },
+  { key: 'shadow', title: 'Shadow triggers and integration' },
   { key: 'growth', title: 'Growth practices' },
-  { key: 'dreams', title: 'Dream and symbol lens' },
+  { key: 'dreams', title: 'Dream reflection prompts' },
 ];
 
 type ResultsState =
@@ -88,13 +93,6 @@ const positionLabels = {
   tertiary: 'Tertiary',
   inferior: 'Inferior',
 } as const;
-
-const axisCopy: Record<FunctionChannel, string> = {
-  thinking: 'Thinking holds the most conscious energy here. Feeling is the opposite pole and the likely site of value, attachment, shame, or relational development.',
-  feeling: 'Feeling holds the most conscious energy here. Thinking is the opposite pole and the likely site of clarity, precision, judgment, or intellectual development.',
-  sensation: 'Sensation holds the most conscious energy here. Intuition is the opposite pole and the likely site of meaning, possibility, dread, or symbolic development.',
-  intuition: 'Intuition holds the most conscious energy here. Sensation is the opposite pole and the likely site of embodiment, limits, appetite, and concrete follow-through.',
-};
 
 const functionCodeByChannel: Record<FunctionChannel, Record<AttitudeDirection, string>> = {
   thinking: {
@@ -130,22 +128,6 @@ const formatDate = (iso: string) => {
   } catch {
     return 'Recently completed';
   }
-};
-
-const sentenceParts = (value: string) =>
-  value
-    .match(/[^.!?]+[.!?]+|[^.!?]+$/g)
-    ?.map((part) => part.trim())
-    .filter(Boolean) || [];
-
-const previewSentences = (value: string, fallback: string, count = 2) => {
-  const parts = sentenceParts(value);
-  return (parts.length ? parts : [fallback]).slice(0, count);
-};
-
-const lockedSentences = (value: string, fallback: string, offset = 2) => {
-  const parts = sentenceParts(value).slice(offset);
-  return parts.length ? parts : [fallback];
 };
 
 const readResults = (): ResultsState => {
@@ -271,68 +253,76 @@ const LockedPremiumPreview: React.FC<{
   intendedTier: PaidTierId;
   onUnlock: (tier: PaidTierId, location: string) => void;
   onViewSampleReport: (location: string) => void;
-}> = ({ results, dominantLabel, inferiorLabel, intendedTier, onUnlock, onViewSampleReport }) => {
+  checkoutOpeningTier: PaidTierId | null;
+  checkoutError: string | null;
+}> = ({
+  results,
+  dominantLabel,
+  inferiorLabel,
+  intendedTier,
+  onUnlock,
+  onViewSampleReport,
+  checkoutOpeningTier,
+  checkoutError,
+}) => {
   const primaryName = PRICING[intendedTier].name;
   const functionStackLabel = results.hierarchy
     .map((item) => getFunctionCode(item.channel, item.attitude))
     .join('-');
   const inferiorChannelLabel = FUNCTION_LABELS[results.inferior];
-  const dominantEnergy = results.energy.find((item) => item.channel === results.dominant)?.score ?? results.hierarchy[0]?.score ?? 0;
-  const inferiorEnergy = results.energy.find((item) => item.channel === results.inferior)?.score ?? results.hierarchy[3]?.score ?? 0;
   const listPrice = PRICING[intendedTier].price;
   const offerPrice = paidTierPrice(intendedTier);
+  const isOpeningCheckout = checkoutOpeningTier === intendedTier;
   const lockedSections = [
     {
-      title: 'Developmental edge',
-      eyebrow: `${dominantEnergy}% dominant / ${inferiorEnergy}% edge`,
-      location: 'results_premium_preview_developmental_edge',
-      ctaLabel: `Unlock my edge - ${offerPrice}`,
-      lockedLabel: 'Full edge locked',
-      featured: true,
-      proof: `Start here: this is where the ${dominantLabel} to ${inferiorLabel} map turns into a concrete practice target.`,
-      visibleLines: previewSentences(
-        results.narrative.developmentalEdge,
-        `${inferiorLabel} is the low-energy edge in this map, so the full report starts with what that function asks you to practice.`,
-      ),
-      lockedLines: lockedSentences(
-        results.narrative.practice,
-        `The full section connects that edge to a concrete weekly practice for the ${dominantLabel} to ${inferiorLabel} axis.`,
-        0,
-      ),
-    },
-    {
-      title: 'Stress pattern',
+      title: 'Grip sequence and recovery',
       eyebrow: `${inferiorChannelLabel} under pressure`,
-      location: 'results_premium_preview_stress_pattern',
-      ctaLabel: `Unlock stress map - ${offerPrice}`,
-      lockedLabel: 'Full stress map locked',
-      featured: false,
-      proof: `The full section connects the edge to the pressure loop that usually appears before behavior changes.`,
-      visibleLines: previewSentences(
-        results.narrative.complexVulnerability,
-        `Stress is likely to collect around the ${inferiorChannelLabel.toLowerCase()} side of this result, especially when the dominant pattern has been overextended.`,
-      ),
-      lockedLines: lockedSentences(
-        results.narrative.somaticSignature,
-        `The full section names the body signal that tends to appear before the stress loop gets louder.`,
-        0,
-      ),
-    },
-    {
-      title: 'Relationship repair cue',
-      eyebrow: `${dominantLabel} to ${inferiorLabel}`,
-      location: 'results_premium_preview_relationship_repair_cue',
-      ctaLabel: `Unlock repair cue - ${offerPrice}`,
-      lockedLabel: 'Full repair cue locked',
-      featured: false,
-      proof: 'The full section gives one repair sentence and one observation prompt tied to this stack.',
+      location: 'results_insight_grip_sequence',
+      ctaLabel: `Get my full report - ${offerPrice}`,
+      lockedLabel: 'Sequence locked',
+      featured: true,
+      proof: 'The report separates the first warning signal, the escalation pattern, and the recovery move instead of repeating your score map.',
       visibleLines: [
-        axisCopy[results.dominant],
-        `The paid report translates that axis into the moment you are most likely to defend, withdraw, overexplain, or push for control.`,
+        `Your free map identifies ${inferiorLabel} as the developmental edge. Insight follows that edge through a concrete pressure sequence.`,
+        `It shows what tends to happen before, during, and after the ${dominantLabel} pattern becomes overextended.`,
       ],
       lockedLines: [
-        `It then gives a repair sentence and one observation prompt for catching the pattern before the interaction hardens.`,
-        `This part is personalized to the ${functionStackLabel} stack and ${results.reliability.label.toLowerCase()} consistency signal.`,
+        `Early signal: the specific shift in attention, body state, or interpretation that tends to arrive first.`,
+        `Recovery move: one grounded action for restoring choice before the pattern hardens.`,
+      ],
+    },
+    {
+      title: 'Relationship and work patterns',
+      eyebrow: 'Two real-life contexts',
+      location: 'results_insight_relationship_work',
+      ctaLabel: `Get the applied patterns - ${offerPrice}`,
+      lockedLabel: 'Applied patterns locked',
+      featured: false,
+      proof: 'Two separate sections translate the same axis into conflict, repair, feedback, pacing, and work conditions.',
+      visibleLines: [
+        `The relationship section looks at where ${inferiorLabel} pressure can create overreading, withdrawal, control, or repair attempts.`,
+        `The work section looks at where ${dominantLabel} has room to operate and where the environment repeatedly strains the weaker channel.`,
+      ],
+      lockedLines: [
+        'A reflection cue for catching the pattern before a conversation hardens.',
+        'Conditions to observe at work without turning the result into career advice.',
+      ],
+    },
+    {
+      title: 'Shadow, growth, and dream prompts',
+      eyebrow: `${functionStackLabel} beyond the label`,
+      location: 'results_insight_shadow_growth',
+      ctaLabel: `Get all 10 sections - ${offerPrice}`,
+      lockedLabel: 'Growth sections locked',
+      featured: false,
+      proof: 'Insight adds distinct sections for archetypes, shadow material, individuation, growth practices, and dream reflection.',
+      visibleLines: [
+        `These sections go beyond the free hierarchy and ask how the less-conscious side of the ${functionStackLabel} pattern may show up over time.`,
+        `The goal is a set of observations and practices, not another fixed identity claim.`,
+      ],
+      lockedLines: [
+        'Shadow trigger and integration prompts tied to the inferior side.',
+        'A practical growth sequence plus dream-journaling questions for continued reflection.',
       ],
     },
   ];
@@ -343,21 +333,21 @@ const LockedPremiumPreview: React.FC<{
         <div className="p-5 sm:p-7">
           <div className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-jung-subtle">
             <Lock className="h-3.5 w-3.5" />
-            Locked report preview
+            10-section report preview
           </div>
           <h2 className="mt-4 text-heading text-3xl text-white">
-            Your paid report starts inside this {functionStackLabel} result.
+            Your {primaryName} report starts where the free map stops.
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-white/70">
-            The free map names the pattern. The locked report previews below use the actual language generated from your scores, then fades where the full interpretation continues.
+            The free map gives you the scores, hierarchy, axis, and consistency signal. {primaryName} adds ten distinct interpretation sections for grip and recovery, relationships, work, archetypes, shadow, growth, and dream reflection.
           </p>
 
           <div className="mt-6 rounded-lg border border-jung-subtle/20 bg-white/[0.06] p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-jung-subtle">Most useful first unlock</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-jung-subtle">Clear free-versus-paid boundary</p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-white/76">
-                  Read the free map, then decide from the developmental edge. That is the section that explains why this exact inferior side matters.
+                  No second test and no repeated score summary. The paid report applies this {functionStackLabel} map across ten deeper, non-clinical reflection sections.
                 </p>
               </div>
               <span className="w-fit rounded-lg bg-white px-3 py-2 text-xs font-semibold text-jung-dark">
@@ -399,9 +389,10 @@ const LockedPremiumPreview: React.FC<{
                   <button
                     type="button"
                     onClick={() => onUnlock(intendedTier, section.location)}
-                    className="mt-4 min-h-11 w-full rounded-lg bg-white px-4 py-3 text-sm font-semibold text-jung-dark shadow-sm transition hover:-translate-y-px hover:bg-jung-subtle focus:outline-none focus:ring-2 focus:ring-white/60"
+                    disabled={isOpeningCheckout}
+                    className="mt-4 min-h-11 w-full rounded-lg bg-white px-4 py-3 text-sm font-semibold text-jung-dark shadow-sm transition hover:-translate-y-px hover:bg-jung-subtle focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-wait disabled:opacity-70"
                   >
-                    {section.ctaLabel}
+                    {isOpeningCheckout ? 'Opening secure Stripe…' : section.ctaLabel}
                   </button>
                 )}
                 <div className="relative mt-4 overflow-hidden rounded-lg border border-white/10 bg-black/[0.18] p-4">
@@ -419,9 +410,10 @@ const LockedPremiumPreview: React.FC<{
                       <button
                         type="button"
                         onClick={() => onUnlock(intendedTier, section.location)}
-                        className="min-h-11 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                        disabled={isOpeningCheckout}
+                        className="min-h-11 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-wait disabled:opacity-70"
                       >
-                        {section.ctaLabel}
+                        {isOpeningCheckout ? 'Opening Stripe…' : section.ctaLabel}
                       </button>
                     )}
                   </div>
@@ -437,7 +429,7 @@ const LockedPremiumPreview: React.FC<{
             {primaryName} - {offerPrice}
           </h3>
           <p className="mt-3 text-sm leading-6 text-jung-secondary">
-            Your free map is already complete. Unlock the developmental edge only if this axis feels worth keeping.
+            Your free map is already complete. This purchase adds ten personalized interpretation sections without making you retake the assessment.
           </p>
           <div className="mt-5 rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 p-4">
             <p className="text-sm font-semibold text-jung-dark">Built from this result</p>
@@ -450,10 +442,16 @@ const LockedPremiumPreview: React.FC<{
             size="lg"
             className="mt-5 w-full"
             onClick={() => onUnlock(intendedTier, 'results_locked_preview')}
-            rightIcon={<ArrowRight className="h-4 w-4" />}
+            disabled={isOpeningCheckout}
+            rightIcon={isOpeningCheckout ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
           >
-            Unlock my edge - {offerPrice}
+            {isOpeningCheckout ? 'Opening secure Stripe' : `Get my 10-section report - ${offerPrice}`}
           </Button>
+          {checkoutError && (
+            <p className="mt-3 rounded-lg border border-error/30 bg-error/5 p-3 text-xs leading-5 text-error" role="alert">
+              {checkoutError} Your result is safe. Try the button again.
+            </p>
+          )}
           <p className="mt-3 text-xs leading-5 text-jung-secondary">
             Includes <span className="font-semibold text-jung-dark">The Function Stack in Depth</span> — a 15-page theory guide (PDF) covering all eight functions, the stack, and the grip.
           </p>
@@ -465,12 +463,13 @@ const LockedPremiumPreview: React.FC<{
           <button
             type="button"
             onClick={() => onUnlock(intendedTier, 'results_locked_preview_price_note')}
-            className="mt-3 w-full rounded-lg border border-jung-border bg-jung-base px-3 py-2 text-xs font-semibold text-jung-secondary transition hover:border-jung-accent hover:text-jung-accent"
+            disabled={isOpeningCheckout}
+            className="mt-3 w-full rounded-lg border border-jung-border bg-jung-base px-3 py-2 text-xs font-semibold text-jung-secondary transition hover:border-jung-accent hover:text-jung-accent disabled:cursor-wait disabled:opacity-70"
           >
-            Continue to review the price before Stripe
+            {isOpeningCheckout ? 'Opening Stripe…' : 'Open secure Stripe directly'}
           </button>
           <p className="mt-3 text-xs leading-5 text-jung-muted">
-            {listPrice} before {EMAIL_CAPTURE_OFFER.code}. You review the discounted order first; no subscription is created.
+            {listPrice} before {EMAIL_CAPTURE_OFFER.code}. Stripe shows the discounted total before payment; no subscription is created.
           </p>
           <button
             type="button"
@@ -482,164 +481,6 @@ const LockedPremiumPreview: React.FC<{
           <p className="mt-4 border-t border-jung-border-light pt-3 text-[11px] leading-5 text-jung-muted">
             Educational self-reflection, not a clinical or diagnostic assessment.
           </p>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const UpgradeStrip: React.FC<{
-  dominantLabel: string;
-  inferiorLabel: string;
-  intendedTier?: PaidTierId;
-  upgradeContext?: ResultUpgradeContext | null;
-  onUnlock: (tier: PaidTierId, location: string) => void;
-  onViewSampleReport: (location: string) => void;
-}> = ({ dominantLabel, inferiorLabel, intendedTier, upgradeContext, onUnlock, onViewSampleReport }) => {
-  const primaryTier = intendedTier ?? 'insight';
-  const secondaryTier: PaidTierId = primaryTier === 'insight' ? 'mastery' : 'insight';
-  const primaryName = PRICING[primaryTier].name;
-  const secondaryName = PRICING[secondaryTier].name;
-  const eyebrow = upgradeContext?.eyebrow || (intendedTier ? `${primaryName} selected` : 'Your map is ready');
-  const headline = upgradeContext?.headline || (intendedTier ? `Continue to ${primaryName} from your result.` : 'Unlock the meaning behind this exact pattern.');
-  const body = upgradeContext?.stripBody(primaryName, dominantLabel, inferiorLabel)
-    || `Your free result shows the map. ${primaryName} adds the meaning behind the ${dominantLabel} to ${inferiorLabel} pattern: stress-pattern reflection, relationship patterns, and practical next steps.`;
-  const modules = [
-    {
-      title: 'Axis interpretation',
-      body: `How the ${dominantLabel} to ${inferiorLabel} pattern can show up when the free map feels accurate but still incomplete.`,
-    },
-    {
-      title: 'Stress and repair',
-      body: `What tends to pull ${dominantLabel} into ${inferiorLabel} pressure, plus the early signals and repair moves to watch.`,
-    },
-    {
-      title: 'Practice plan',
-      body: 'Concrete prompts for work, conflict, relationships, and self-observation so the result becomes usable.',
-    },
-  ];
-  const reportQuestions = [
-    `What does my ${dominantLabel} lead actually mean in daily decisions?`,
-    `Where does ${inferiorLabel} pressure make my behavior look inconsistent?`,
-    'Which relationship and work patterns should I watch first?',
-    'What should I practice this week so the map turns into action?',
-  ];
-
-  return (
-    <section className="mb-10 overflow-hidden rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 shadow-sm">
-      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_25rem]">
-        <div>
-          <div className="p-5 sm:p-7">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-lg bg-jung-surface px-3 py-1.5 text-xs font-semibold text-jung-accent">
-              <Sparkles className="h-3.5 w-3.5" />
-              {eyebrow}
-            </div>
-            <h2 className="text-heading text-2xl text-jung-dark sm:text-3xl">
-              {headline}
-            </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-jung-secondary">
-              {body}
-            </p>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {modules.map((module, index) => (
-                <div key={module.title} className="rounded-lg border border-jung-border bg-jung-surface p-4">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-jung-accent-light text-xs font-semibold text-jung-accent">
-                    {index + 1}
-                  </span>
-                  <h3 className="mt-3 text-sm font-semibold text-jung-dark">{module.title}</h3>
-                  <p className="mt-2 text-xs leading-5 text-jung-secondary">{module.body}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 rounded-lg border border-jung-border bg-jung-surface p-4 sm:p-5">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-jung-dark">Questions the paid report answers</p>
-                  <p className="mt-1 text-xs leading-5 text-jung-muted">
-                    Use this only if the free map feels worth keeping.
-                  </p>
-                </div>
-                <span className="w-fit rounded-lg bg-jung-accent-light px-2.5 py-1 text-xs font-semibold text-jung-accent">
-                  Built from this result
-                </span>
-              </div>
-              <ul className="mt-4 grid gap-2 text-sm leading-6 text-jung-secondary sm:grid-cols-2">
-                {reportQuestions.map((question) => (
-                  <li key={question} className="flex min-w-0 gap-2">
-                    <Check className="mt-1 h-3.5 w-3.5 flex-none text-jung-accent" />
-                    <span className="min-w-0">{question}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2 text-xs text-jung-muted">
-              {[`${EMAIL_CAPTURE_OFFER.code} auto-applied`, 'One-time CAD purchase', 'No subscription', '7-day guarantee'].map((item) => (
-                <span key={item} className="inline-flex items-center gap-1.5 rounded-lg border border-jung-border bg-jung-surface px-3 py-1.5">
-                  <Check className="h-3.5 w-3.5 text-jung-accent" />
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-jung-accent-muted bg-jung-surface p-5 sm:p-6 lg:border-l lg:border-t-0">
-          <p className="text-label">Recommended next step</p>
-          <h3 className="mt-2 text-heading text-2xl text-jung-dark">
-            {primaryName} - {paidTierPrice(primaryTier)}
-          </h3>
-          <p className="mt-2 text-xs leading-5 text-jung-muted">
-            <span className="line-through">{PRICING[primaryTier].price}</span> before {EMAIL_CAPTURE_OFFER.code}. Stripe applies the code before payment.
-          </p>
-          <div className="mt-4 rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 p-4">
-            <p className="text-sm font-semibold text-jung-dark">Report starts from your axis</p>
-            <p className="mt-2 text-xs leading-5 text-jung-secondary">
-              {dominantLabel} to {inferiorLabel} stays visible through the paid interpretation.
-            </p>
-          </div>
-
-          <Button
-            variant="accent"
-            size="lg"
-            className="mt-5 w-full"
-            onClick={() => onUnlock(primaryTier, 'results_upgrade_strip')}
-            rightIcon={<ArrowRight className="h-4 w-4" />}
-          >
-            Unlock my {primaryName} report
-          </Button>
-
-          <div className="mt-3 grid gap-2">
-            <button
-              type="button"
-              onClick={() => onUnlock(secondaryTier, 'results_upgrade_strip_secondary')}
-              className="min-h-11 rounded-lg border border-jung-border bg-jung-base px-4 text-sm font-semibold text-jung-secondary transition hover:border-jung-accent hover:text-jung-accent"
-            >
-              {secondaryName} instead - {paidTierPrice(secondaryTier)}
-            </button>
-            <button
-              type="button"
-              onClick={() => onViewSampleReport('results_upgrade_strip')}
-              className="min-h-11 rounded-lg border border-jung-border bg-white px-4 text-sm font-semibold text-jung-secondary transition hover:border-jung-accent hover:text-jung-accent"
-            >
-              Preview before buying
-            </button>
-          </div>
-
-          <DiscountCaptureCard
-            source="results_upgrade_strip"
-            dominantLabel={dominantLabel}
-            inferiorLabel={inferiorLabel}
-            compact
-            minimal
-            minimalTitle="Not paying right now?"
-            minimalDescription={`Email the ${dominantLabel} to ${inferiorLabel} axis, the ${EMAIL_CAPTURE_OFFER.code} code, and the ${primaryName} link.`}
-            minimalSubmitLabel="Email my result path"
-            minimalFootnote="One email with the backup code and report link. No spam."
-            minimalSentMessage={`Result path sent. The email links back to ${primaryName} with the discount ready.`}
-            preferredTier={primaryTier}
-            showCheckoutButtons={false}
-            className="mt-5 border-t border-jung-border pt-5"
-          />
         </div>
       </div>
     </section>
@@ -728,6 +569,8 @@ export const Results: React.FC = () => {
   const [shareLinkState, setShareLinkState] = useState<'idle' | 'creating' | 'error'>('idle');
   const [upgradeIntent] = useState(readUpgradeIntent);
   const [acquisition] = useState(readAcquisitionSource);
+  const [checkoutOpeningTier, setCheckoutOpeningTier] = useState<PaidTierId | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const referralPromptTrackedRef = useRef<string | null>(null);
   const upgradeOfferTrackedRef = useRef<string | null>(null);
   const upgradeContextTrackedRef = useRef<string | null>(null);
@@ -737,15 +580,7 @@ export const Results: React.FC = () => {
     : null;
   const intendedTier = upgradeIntent?.tier ?? 'insight';
   const intendedTierName = PRICING[intendedTier].name;
-  const orderedUpgradeOptions = useMemo(() => {
-    if (!upgradeIntent) return upgradeOptions;
-    return [
-      ...upgradeOptions.filter((option) => option.tier === upgradeIntent.tier),
-      ...upgradeOptions.filter((option) => option.tier !== upgradeIntent.tier),
-    ];
-  }, [upgradeIntent]);
-  const primaryUpgradeOption = orderedUpgradeOptions[0] ?? upgradeOptions[0];
-  const secondaryUpgradeOptions = orderedUpgradeOptions.slice(1);
+  const primaryUpgradeOption = upgradeOptions.find((option) => option.tier === intendedTier) ?? upgradeOptions[0];
   const upgradeContext = useMemo(
     () => resultUpgradeContextFromSource(acquisition?.source, {
       parentSource: acquisition?.parentSource,
@@ -756,25 +591,65 @@ export const Results: React.FC = () => {
     [acquisition?.parentSource, acquisition?.source, acquisition?.sourceChain, acquisition?.utmCampaign, acquisition?.utmSource],
   );
 
-  const openUpgradeCheckout = useCallback((paidTier: PaidTierId, location: string) => {
-    const destination = pathWithSource(`/checkout/${paidTier}`, location);
+  const openUpgradeCheckout = useCallback(async (paidTier: PaidTierId, ctaSource: string) => {
+    if (checkoutOpeningTier) return;
+
+    const destination = 'secure_stripe_checkout';
     trackEvent('results_unlock_clicked', {
-      source: location,
+      source: ctaSource,
       tier: paidTier,
       destination,
+      checkout_mode: 'direct',
       value: PRICING[paidTier].amount,
       currency: PRICING[paidTier].currency,
       price_cad: PRICING[paidTier].amount,
       displayed_price: PRICING[paidTier].price,
       discounted_price: paidTierPrice(paidTier),
     });
-    AnalyticsEvents.upgradeClicked(location, paidTier);
-    AnalyticsEvents.ctaClicked(`unlock_${paidTier}`, location, {
-      buttonText: `Unlock ${PRICING[paidTier].name} - ${paidTierPrice(paidTier)}`,
+    AnalyticsEvents.upgradeClicked(ctaSource, paidTier);
+    AnalyticsEvents.purchaseStarted(paidTier, PRICING[paidTier].amount);
+    AnalyticsEvents.ctaClicked(`unlock_${paidTier}`, ctaSource, {
+      buttonText: `Get ${PRICING[paidTier].name} - ${paidTierPrice(paidTier)}`,
       destination,
     });
-    navigate(destination);
-  }, [navigate]);
+
+    setCheckoutError(null);
+    setCheckoutOpeningTier(paidTier);
+
+    try {
+      const { session, attribution } = await createDirectCheckoutSession({
+        tier: paidTier,
+        source: ctaSource,
+        acquisition,
+        customerEmail: user?.email,
+        anonymousId: getFunnelAnonymousId(),
+      });
+
+      writePendingCheckout({
+        tier: paidTier,
+        url: session.url,
+        sessionId: session.sessionId,
+        expiresAt: session.expiresAt,
+        source: ctaSource,
+        attribution,
+      });
+      trackEvent('results_direct_checkout_created', {
+        source: ctaSource,
+        tier: paidTier,
+        has_account_email: Boolean(user?.email),
+      });
+      window.location.assign(session.url);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Secure checkout could not open. Please try again.';
+      setCheckoutError(message);
+      setCheckoutOpeningTier(null);
+      trackEvent('results_direct_checkout_failed', {
+        source: ctaSource,
+        tier: paidTier,
+        reason: message.slice(0, 120),
+      });
+    }
+  }, [acquisition, checkoutOpeningTier, user?.email]);
 
   const viewSampleReport = useCallback((location: string) => {
     const destination = pathWithSource('/sample-report', location);
@@ -1614,6 +1489,11 @@ export const Results: React.FC = () => {
         {!premiumLoading && !isPremium && (
           <>
             <p className="figure-label mb-5 mt-10">Part 02 — Optional paid depth</p>
+            {intentFraming && (
+              <p className="mb-5 rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 px-4 py-3 text-sm leading-6 text-jung-dark">
+                {intentFraming.line}
+              </p>
+            )}
             <LockedPremiumPreview
               results={results}
               dominantLabel={dominantLabel}
@@ -1621,108 +1501,10 @@ export const Results: React.FC = () => {
               intendedTier={intendedTier}
               onUnlock={openUpgradeCheckout}
               onViewSampleReport={viewSampleReport}
+              checkoutOpeningTier={checkoutOpeningTier}
+              checkoutError={checkoutError}
             />
 
-            <section className="mb-10 rounded-lg border border-jung-accent-muted bg-jung-accent-light/60 p-5 shadow-sm sm:p-6">
-              <div className="mb-5 max-w-3xl">
-                <p className="text-label">Choose the right next step</p>
-                <h2 className="mt-2 text-2xl font-semibold text-jung-dark">Did this result settle the typing question?</h2>
-                <p className="mt-2 text-sm leading-6 text-jung-secondary">
-                  Your free map is complete. Use the branch that matches your actual reaction instead of buying more than you need.
-                </p>
-                {intentFraming && (
-                  <p className="mt-3 rounded-lg border border-jung-accent-muted bg-jung-surface px-4 py-3 text-sm leading-6 text-jung-dark">
-                    {intentFraming.line}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-3 lg:grid-cols-3">
-                <article className="flex min-h-full flex-col rounded-lg border border-jung-border bg-jung-surface p-4">
-                  <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-jung-accent-light text-jung-accent">
-                    <FileText className="h-4 w-4" />
-                  </div>
-                  <h3 className="text-base font-semibold text-jung-dark">It helped, but I want the meaning.</h3>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-jung-secondary">
-                    Unlock Insight when the map feels accurate and you want the developmental edge, stress pattern, and practice prompts.
-                  </p>
-                  <Button
-                    variant="accent"
-                    size="sm"
-                    className="mt-4 w-full"
-                    onClick={() => openUpgradeCheckout('insight', 'results_branch_meaning')}
-                    rightIcon={<ArrowRight className="h-4 w-4" />}
-                  >
-                    Insight - {paidTierPrice('insight')}
-                  </Button>
-                </article>
-
-                <article className="flex min-h-full flex-col rounded-lg border border-jung-border bg-jung-surface p-4">
-                  <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-jung-accent-light text-jung-accent">
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-                  <h3 className="text-base font-semibold text-jung-dark">I want to keep working with it.</h3>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-jung-secondary">
-                    Choose Mastery if you want the deeper report plus AI Type Guide, practice roadmap, and follow-up support.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 w-full"
-                    onClick={() => openUpgradeCheckout('mastery', 'results_branch_practice')}
-                    rightIcon={<ArrowRight className="h-4 w-4" />}
-                  >
-                    Mastery - {paidTierPrice('mastery')}
-                  </Button>
-                </article>
-
-                <article className="flex min-h-full flex-col rounded-lg border border-jung-accent-muted bg-jung-base p-4">
-                  <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-jung-surface text-jung-accent">
-                    <UserCheck className="h-4 w-4" />
-                  </div>
-                  <h3 className="text-base font-semibold text-jung-dark">I am still stuck between two types.</h3>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-jung-secondary">
-                    Get a founder-reviewed Debrief when the automated map is interesting but you want a second read.
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="mt-4 w-full"
-                    onClick={() => {
-                      trackEvent('debrief_cta_clicked', { source: 'results_branch_still_stuck' });
-                      navigate(pathWithSource('/debrief', 'results_branch_still_stuck'));
-                    }}
-                    rightIcon={<ArrowRight className="h-4 w-4" />}
-                  >
-                    Debrief - {DEBRIEF_OFFER.price}
-                  </Button>
-                </article>
-              </div>
-            </section>
-
-            <section className="mb-10 rounded-lg border border-jung-border bg-jung-surface p-5 shadow-sm sm:p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-label">Prefer a human read</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-jung-dark">Still stuck between two types?</h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-jung-secondary">
-                    If you do not trust automated interpretation, get a founder-reviewed Personal Type Debrief of this
-                    exact map, your likely mistypes, and your stress edge — within {DEBRIEF_OFFER.deliveryHours} hours.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="flex-none"
-                  onClick={() => {
-                    trackEvent('debrief_cta_clicked', { source: 'results_still_confused' });
-                    navigate('/debrief');
-                  }}
-                  rightIcon={<ArrowRight className="h-4 w-4" />}
-                >
-                  Get a debrief - {DEBRIEF_OFFER.price}
-                </Button>
-              </div>
-            </section>
           </>
         )}
 
@@ -1983,48 +1765,22 @@ export const Results: React.FC = () => {
             ) : (
               <>
                 <p className="mt-4 text-sm leading-7 text-jung-secondary">
-                  Unlock only after the free map earns it. Paid access is a one-time CAD purchase handled by Stripe, with no hidden subscription.
+                  Your free score map is complete. {primaryUpgradeOption.label} adds ten personalized interpretation sections rather than repeating the hierarchy you already saw.
                 </p>
-                <DiscountCaptureCard
-                  source="results_paid_report_card"
-                  dominantLabel={dominantLabel}
-                  inferiorLabel={inferiorLabel}
-                  compact
-                  preferredTier={intendedTier}
-                  className="mt-5"
-                />
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  {[
-                    ['Pay after value', 'Read your free map first. Upgrade only if it feels worth keeping.'],
-                    ['One-time CAD', `Insight is ${paidTierPrice('insight')} and Mastery is ${paidTierPrice('mastery')} with ${EMAIL_CAPTURE_OFFER.code}. No renewal or hidden subscription.`],
-                    ['7-day guarantee', `If the paid report is not useful, email ${SUPPORT_EMAIL} with your Stripe receipt within 7 days.`],
-                  ].map(([label, copy]) => (
-                    <div key={label} className="rounded-lg border border-jung-border bg-jung-base p-3">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-jung-dark">
-                        <Check className="h-3.5 w-3.5 text-jung-accent" />
-                        {label}
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-jung-muted">{copy}</p>
-                    </div>
-                  ))}
-                </div>
                 <div className="mt-5 rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-lg bg-jung-dark px-2.5 py-1 text-xs font-semibold text-white">
-                      {upgradeIntent?.tier === primaryUpgradeOption.tier ? 'Selected path' : 'Recommended first unlock'}
+                      10 personalized sections
                     </span>
                     <span className="rounded-lg bg-jung-surface px-2.5 py-1 text-xs font-semibold text-jung-accent">
                       {paidTierPrice(primaryUpgradeOption.tier)} one-time
                     </span>
-                    <span className="rounded-lg border border-jung-accent-muted bg-jung-base px-2.5 py-1 text-xs font-semibold text-jung-muted">
-                      <span className="line-through">{PRICING[primaryUpgradeOption.tier].price}</span> before code
-                    </span>
                   </div>
                   <h3 className="mt-4 text-xl font-semibold text-jung-dark">
-                    {upgradeIntent?.tier === primaryUpgradeOption.tier ? `Continue to ${primaryUpgradeOption.label}` : `Start with ${primaryUpgradeOption.label}`}
+                    {primaryUpgradeOption.label}: the interpretation behind this map
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-jung-secondary">
-                    {primaryUpgradeOption.preview} It opens the paid report from the {dominantLabel} to {inferiorLabel} axis already shown above.
+                    {primaryUpgradeOption.preview}
                   </p>
                   <div className="mt-4 grid gap-2">
                     {primaryUpgradeOption.features.map((feature) => (
@@ -2039,102 +1795,34 @@ export const Results: React.FC = () => {
                     size="lg"
                     className="mt-4 w-full"
                     onClick={() => openUpgradeCheckout(primaryUpgradeOption.tier, 'results_paid_report_card')}
-                    rightIcon={<ArrowRight className="h-5 w-5" />}
+                    disabled={checkoutOpeningTier === primaryUpgradeOption.tier}
+                    rightIcon={checkoutOpeningTier === primaryUpgradeOption.tier
+                      ? <Loader2 className="h-5 w-5 animate-spin" />
+                      : <ArrowRight className="h-5 w-5" />}
                   >
-                    Review {primaryUpgradeOption.label} - {paidTierPrice(primaryUpgradeOption.tier)}
+                    {checkoutOpeningTier === primaryUpgradeOption.tier
+                      ? 'Opening secure Stripe'
+                      : `Get my report - ${paidTierPrice(primaryUpgradeOption.tier)}`}
                   </Button>
+                  {checkoutError && (
+                    <p className="mt-3 rounded-lg border border-error/30 bg-error/5 p-3 text-xs leading-5 text-error" role="alert">
+                      {checkoutError} Your result is safe. Try again.
+                    </p>
+                  )}
                   <p className="mt-3 text-xs leading-5 text-jung-muted">
-                    Next step is the checkout review page, then secure Stripe. 7-day guarantee, no subscription.
+                    The next click opens secure Stripe directly. One-time CAD, 7-day guarantee, no subscription.
                   </p>
-                </div>
-                {secondaryUpgradeOptions.length > 0 && (
-                  <div className="mt-3 divide-y divide-jung-border rounded-lg border border-jung-border bg-jung-base">
-                    {secondaryUpgradeOptions.map((option) => (
-                      <div key={option.tier} className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-sm font-semibold text-jung-dark">{option.label}</h3>
-                            <span className="rounded-lg bg-jung-accent-light px-2 py-1 text-xs font-semibold text-jung-accent">
-                              {paidTierPrice(option.tier)}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-xs leading-5 text-jung-secondary">{option.description}</p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full sm:w-auto"
-                          onClick={() => openUpgradeCheckout(option.tier, 'results_paid_report_card_secondary')}
-                          rightIcon={<ArrowRight className="h-4 w-4" />}
-                        >
-                          Review {option.label}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                   <Button
                     variant="ghost"
-                    onClick={() => {
-                      AnalyticsEvents.ctaClicked('compare_pricing', 'results_paid_report_card', {
-                        buttonText: 'Compare plans',
-                        destination: '/pricing#compare',
-                      });
-                      navigate('/pricing#compare');
-                    }}
-                    leftIcon={<Sparkles className="h-4 w-4" />}
-                  >
-                    Compare all plans
-                  </Button>
-                  <Button
-                    variant="ghost"
+                    className="mt-2 w-full"
                     onClick={() => viewSampleReport('results_paid_report_card')}
                     leftIcon={<FileText className="h-4 w-4" />}
                   >
-                    View sample report
+                    View the sample first
                   </Button>
                 </div>
               </>
             )}
-          </div>
-        </section>
-
-        <section className="mt-8 grid gap-5 lg:grid-cols-3">
-          <div className="rounded-lg border border-jung-border bg-jung-surface p-6">
-            <p className="text-label">Developmental edge</p>
-            <h2 className="mt-3 text-2xl font-semibold text-jung-dark">{FUNCTION_LABELS[results.inferior]} asks for development</h2>
-            <p className="mt-4 text-sm leading-7 text-jung-secondary">{results.narrative.developmentalEdge}</p>
-          </div>
-
-          <div className="rounded-lg border border-jung-border bg-jung-surface p-6">
-            <p className="text-label">Pressure pattern</p>
-            <h2 className="mt-3 text-2xl font-semibold text-jung-dark">Where overreaction is likely</h2>
-            <p className="mt-4 text-sm leading-7 text-jung-secondary">{results.narrative.complexVulnerability}</p>
-          </div>
-
-          <div className="rounded-lg border border-jung-border bg-jung-surface p-6">
-            <p className="text-label">Somatic signal</p>
-            <h2 className="mt-3 text-2xl font-semibold text-jung-dark">Where the body speaks</h2>
-            <p className="mt-4 text-sm leading-7 text-jung-secondary">{results.narrative.somaticSignature}</p>
-          </div>
-        </section>
-
-        <section className="mt-8 rounded-lg border border-jung-border bg-jung-surface p-6 sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[0.8fr_1fr]">
-            <div>
-              <p className="text-label">Dominant-inferior tension</p>
-              <h2 className="mt-3 text-heading text-3xl text-jung-dark">
-                {FUNCTION_LABELS[results.dominant]} to {FUNCTION_LABELS[results.inferior]}
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-jung-secondary">
-                {axisCopy[results.dominant]}
-              </p>
-            </div>
-            <div className="rounded-lg border border-jung-border bg-jung-base p-5">
-              <p className="text-sm font-semibold text-jung-dark">Practice for this edge</p>
-              <p className="mt-3 text-sm leading-7 text-jung-secondary">{results.narrative.practice}</p>
-            </div>
           </div>
         </section>
 
@@ -2156,7 +1844,7 @@ export const Results: React.FC = () => {
           <div className="mx-auto flex max-w-screen-sm items-center gap-3 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold leading-5 text-jung-dark">
-                Unlock {FUNCTION_LABELS[results.inferior].toLowerCase()} edge — {paidTierPrice(intendedTier)}
+                10-section {intendedTierName} report — {paidTierPrice(intendedTier)}
               </p>
               <p className="mt-0.5 text-xs leading-4 text-jung-muted">
                 7-day guarantee ·{' '}
@@ -2174,9 +1862,12 @@ export const Results: React.FC = () => {
               size="sm"
               className="min-h-11 flex-none"
               onClick={() => openUpgradeCheckout(intendedTier, 'results_mobile_sticky')}
-              rightIcon={<ArrowRight className="h-4 w-4" />}
+              disabled={checkoutOpeningTier === intendedTier}
+              rightIcon={checkoutOpeningTier === intendedTier
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <ArrowRight className="h-4 w-4" />}
             >
-              Unlock
+              {checkoutOpeningTier === intendedTier ? 'Opening' : 'Get report'}
             </Button>
           </div>
         </div>
