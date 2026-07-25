@@ -14,6 +14,8 @@ type DiscountCaptureCardProps = {
   inferiorLabel?: string;
   compact?: boolean;
   showCheckoutButtons?: boolean;
+  onCheckout?: (tier: PaidTierId) => void;
+  checkoutButtonLabel?: string;
   minimal?: boolean;
   minimalTitle?: string;
   minimalDescription?: string;
@@ -59,6 +61,8 @@ export const DiscountCaptureCard: React.FC<DiscountCaptureCardProps> = ({
   inferiorLabel,
   compact = false,
   showCheckoutButtons = true,
+  onCheckout,
+  checkoutButtonLabel,
   minimal = false,
   minimalTitle,
   minimalDescription,
@@ -134,11 +138,19 @@ export const DiscountCaptureCard: React.FC<DiscountCaptureCardProps> = ({
   };
 
   const goToCheckout = (tier: PaidTierId) => {
-    const destination = pathWithSource(`/checkout/${tier}`, `${source}_${tier}_checkout`);
+    const destination = onCheckout
+      ? 'secure_stripe_checkout'
+      : pathWithSource(`/checkout/${tier}`, `${source}_${tier}_checkout`);
     AnalyticsEvents.ctaClicked(`open_${tier}_checkout_after_discount_email`, source, {
-      buttonText: `Open ${tier} checkout`,
+      buttonText: checkoutButtonLabel || `Open ${tier} checkout`,
       destination,
     });
+
+    if (onCheckout) {
+      onCheckout(tier);
+      return;
+    }
+
     navigate(destination);
   };
 
@@ -254,7 +266,7 @@ export const DiscountCaptureCard: React.FC<DiscountCaptureCardProps> = ({
                 onClick={() => goToCheckout(preferredTier)}
                 rightIcon={<ArrowRight className="h-4 w-4" />}
               >
-                Continue to {preferredTierName} - discounted
+                {checkoutButtonLabel || `Continue to ${preferredTierName} - discounted`}
               </Button>
             )}
           </div>

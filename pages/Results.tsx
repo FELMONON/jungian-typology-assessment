@@ -1311,9 +1311,11 @@ export const Results: React.FC = () => {
                   minimalDescription={`Email the ${dominantLabel} to ${inferiorLabel} axis, the ${EMAIL_CAPTURE_OFFER.code} code, and the ${intendedTierName} checkout path before you leave.`}
                   minimalSubmitLabel="Send map"
                   minimalFootnote="One private email with this result path and code. No subscription."
-                  minimalSentMessage={`Result path sent. The email links back to ${intendedTierName} with the discount ready.`}
+                  minimalSentMessage={`Result path sent. Continue to secure checkout now, or use the email later.`}
                   preferredTier={intendedTier}
-                  showCheckoutButtons={false}
+                  showCheckoutButtons
+                  onCheckout={(paidTier) => openUpgradeCheckout(paidTier, 'results_hero_mobile_save_path')}
+                  checkoutButtonLabel={`Continue to secure checkout - ${paidTierPrice(intendedTier)}`}
                   className="mt-6 hidden border-t border-white/10 pt-5 md:block lg:hidden"
                 />
               )}
@@ -1347,9 +1349,11 @@ export const Results: React.FC = () => {
                   minimalDescription={`Email the ${dominantLabel} to ${inferiorLabel} axis, the ${EMAIL_CAPTURE_OFFER.code} code, and the ${intendedTierName} checkout path before you leave.`}
                   minimalSubmitLabel="Send map"
                   minimalFootnote="One private email with this result path and code. No subscription."
-                  minimalSentMessage={`Result path sent. The email links back to ${intendedTierName} with the discount ready.`}
+                  minimalSentMessage={`Result path sent. Continue to secure checkout now, or use the email later.`}
                   preferredTier={intendedTier}
-                  showCheckoutButtons={false}
+                  showCheckoutButtons
+                  onCheckout={(paidTier) => openUpgradeCheckout(paidTier, 'results_hero_axis_save_path')}
+                  checkoutButtonLabel={`Continue to secure checkout - ${paidTierPrice(intendedTier)}`}
                   className="mt-5 hidden border-t border-white/10 pt-5 lg:block"
                 />
               )}

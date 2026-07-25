@@ -243,7 +243,7 @@ const faqs = [
   {
     question: 'How long does it take?',
     answer:
-      'Most people finish in about 12 to 16 minutes. The best results come from answering quickly and honestly instead of trying to optimize the outcome.',
+      'Most people should set aside about 20 to 25 minutes. Progress saves on this device, so you can pause and return without losing your answers.',
   },
 ];
 
@@ -430,7 +430,7 @@ export const Home: React.FC = () => {
                 </Button>
               </div>
               <p className="mt-3 text-sm leading-6 text-jung-muted">
-                42 prompts, usually 12-16 minutes. No card before the free result.
+                42 prompts, usually 20-25 minutes. Progress saves on this device. No card before the free result.
               </p>
 
               <div className="reveal reveal-4 mt-6 grid max-w-2xl gap-2 sm:grid-cols-3" aria-label="TypeJung early proof metrics">
@@ -556,7 +556,7 @@ export const Home: React.FC = () => {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase text-jung-muted">Locked paid depth</p>
-                      <h3 className="mt-1 font-display text-xl font-semibold">Preview first, then review checkout.</h3>
+                      <h3 className="mt-1 font-display text-xl font-semibold">Preview first, then open secure checkout.</h3>
                       <p className="mt-1 max-w-lg text-sm leading-6 text-jung-secondary">
                         The results page shows a real excerpt from your developmental edge and stress pattern before the {INSIGHT_PRICE_TODAY} Stripe step.
                       </p>
@@ -568,7 +568,7 @@ export const Home: React.FC = () => {
 
                   <div className="mt-4 flex flex-col gap-3 border-t border-jung-border-light pt-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs leading-5 text-jung-secondary">
-                      This is the paywall moment: personalized preview first, {INSIGHT_PRICE_TODAY} checkout review second.
+                      This is the paywall moment: personalized preview first, then one click to secure Stripe at {INSIGHT_PRICE_TODAY}.
                     </p>
                     <Button
                       onClick={() => viewSampleReport('home_hero_locked_preview')}

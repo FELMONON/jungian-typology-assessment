@@ -39,7 +39,7 @@ export const FAQ_ITEMS = [
   },
   {
     question: "How long does the assessment take?",
-    answer: "About 12-16 minutes. Answer honestly—don't overthink it."
+    answer: "Set aside about 20-25 minutes. Progress saves on this device, so you can pause and return."
   },
   {
     question: "Do I need to create an account?",

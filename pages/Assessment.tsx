@@ -51,7 +51,7 @@ const rotateOptions = (options: DepthAnswerOption[], questionId: string): DepthA
 const preflightCards = [
   {
     icon: Layers3,
-    label: '42 scenario prompts',
+    label: '42 prompts · about 20-25 minutes',
     body: 'Attention, decisions, conflict, stress, body signal, and attitude direction.',
   },
   {
@@ -180,10 +180,10 @@ export const Assessment: React.FC = () => {
 
   const totalAnswered = countAssessmentAnswers(answers);
   const overallProgress = Math.round((totalAnswered / depthQuestions.length) * 100);
-  // Rough pace estimate: ~20s/prompt (the 42-prompt map averages ~14 minutes).
+  // Calibrated to the observed production median of roughly 23 minutes for 42 prompts.
   // Only surfaced past the halfway point so it reads as encouragement, not pressure.
   const remainingQuestions = depthQuestions.length - totalAnswered;
-  const minutesLeft = Math.max(1, Math.round((remainingQuestions * 20) / 60));
+  const minutesLeft = Math.max(1, Math.round((remainingQuestions * 33) / 60));
   const showTimeEstimate = overallProgress >= 50 && remainingQuestions > 0;
   const isPageComplete = currentQuestions.every((question) => answers[question.id]);
   const currentLayer = currentQuestions[0]?.layer ?? 'behavioral';
