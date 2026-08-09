@@ -35,9 +35,10 @@ const entries: SitemapEntry[] = [
   { loc: '/leaderboard', lastmod: TODAY, changefreq: 'daily', priority: 0.6 },
   { loc: '/ai-run-store', lastmod: TODAY, changefreq: 'weekly', priority: 0.6 },
   { loc: '/about', lastmod: TODAY, changefreq: 'monthly', priority: 0.5 },
-  { loc: '/content.txt', lastmod: TODAY, changefreq: 'weekly', priority: 0.4 },
-  { loc: '/llms.txt', lastmod: TODAY, changefreq: 'weekly', priority: 0.4 },
-  
+
+  // Note: /content.txt and /llms.txt are intentionally excluded from the HTML sitemap.
+  // They are plain-text files for AI/LLM consumption, not pages Google should index.
+
   // Blog pages
   { loc: '/blog/', lastmod: TODAY, changefreq: 'weekly', priority: 0.8 },
   { loc: '/blog/singer-loomis-vs-mbti', lastmod: '2026-01-15', changefreq: 'monthly', priority: 0.7 },
@@ -53,10 +54,25 @@ for (const article of growthBlogArticles) {
   });
 }
 
-// Add high-intent SEO landing pages
+// Add high-intent SEO landing pages.
+// Strategy: keep the strongest, most differentiated hubs in the sitemap so crawl
+// budget concentrates on pages that can rank and convert. Near-identical
+// "X vs Y test" comparison pages that look like duplicates to Google are
+// excluded from the sitemap (the pages still exist and stay internally linked,
+// just not sitemap-promoted).
+const sitemapExcludedLanding = new Set([
+  // Redundant low-traffic comparison "hub" pages (breadcrumb targets, not ranking)
+  'guides',
+  'creator-preview',
+]);
+
 for (const page of seoLandingPages) {
+  const slug = page.slug;
+  // Skip generic X-vs-Y type-comparison test pages (near-duplicate clusters)
+  if (/^[a-z]+-vs-[a-z]+-test$/.test(slug)) continue;
+  if (sitemapExcludedLanding.has(slug)) continue;
   entries.push({
-    loc: `/${page.slug}`,
+    loc: `/${slug}`,
     lastmod: TODAY,
     changefreq: 'monthly',
     priority: 0.85

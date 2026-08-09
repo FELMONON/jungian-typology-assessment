@@ -704,6 +704,53 @@ export const Home: React.FC = () => {
           </div>
         </section>
 
+        <section className="border-b border-jung-border-light bg-jung-surface/50 py-12 lg:py-16">
+          <div className="lab-container">
+            <div className="mb-8 max-w-2xl">
+              <p className="figure-label">Type &amp; function library</p>
+              <h2 className="mt-3 font-display text-4xl font-semibold leading-tight text-jung-dark md:text-5xl">
+                Explore each type and function in depth.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-jung-secondary">
+                Every TypeJung guide explains a cognitive function or personality type through the same
+                function-stack lens used in the assessment, helping you read your own map.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border border-jung-border bg-white p-5 shadow-sm">
+                <h3 className="font-display text-xl font-semibold text-jung-dark">Eight cognitive functions</h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {[{ c: 'ni', l: 'Introverted Intuition' }, { c: 'ne', l: 'Extraverted Intuition' },
+                    { c: 'si', l: 'Introverted Sensing' }, { c: 'se', l: 'Extraverted Sensing' },
+                    { c: 'ti', l: 'Introverted Thinking' }, { c: 'te', l: 'Extraverted Thinking' },
+                    { c: 'fi', l: 'Introverted Feeling' }, { c: 'fe', l: 'Extraverted Feeling' }]
+                    .map(({ c, l }) => (
+                      <a key={c} href={`/functions/${c}`} onClick={() => trackGuideClick(`/functions/${c}`, l)}
+                         className="inline-flex items-center rounded-full border border-jung-border bg-jung-base px-3 py-1.5 text-sm font-medium text-jung-dark transition-colors hover:bg-jung-accent-light/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jung-accent">
+                        <span className="font-mono text-xs font-semibold text-jung-accent">{c.toUpperCase()}</span>
+                        <span className="ml-2">{l}</span>
+                      </a>
+                    ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-jung-border bg-white p-5 shadow-sm">
+                <h3 className="font-display text-xl font-semibold text-jung-dark">Sixteen personality types</h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {['intj','intp','entj','entp','infj','infp','enfj','enfp','istj','isfj','estj','esfj','istp','isfp','estp','esfp']
+                    .map((t) => (
+                      <a key={t} href={`/types/${t}`} onClick={() => trackGuideClick(`/types/${t}`, `${t.toUpperCase()} type guide`)}
+                         className="inline-flex items-center rounded-full border border-jung-border bg-jung-base px-3 py-1.5 font-mono text-sm font-semibold uppercase tracking-wide text-jung-dark transition-colors hover:bg-jung-accent-light/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jung-accent">
+                        {t}
+                      </a>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="border-y border-jung-border-light bg-white py-12 lg:py-20">
           <div className="lab-container grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
             <div>
