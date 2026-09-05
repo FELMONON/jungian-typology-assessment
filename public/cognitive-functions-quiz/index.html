@@ -180,7 +180,7 @@
   ],
   "url": "https://typejung.com/cognitive-functions-quiz",
   "inLanguage": "en",
-  "dateModified": "2026-08-09",
+  "dateModified": "2026-09-05",
   "isPartOf": {
     "@type": "WebSite",
     "name": "TypeJung",
@@ -252,6 +252,31 @@
     }
   ]
 }
+</script>
+<script data-typejung-standalone-analytics>
+  (() => {
+    const productionHosts = new Set(['typejung.com', 'www.typejung.com']);
+    const privacySignal = ['1', 'yes'].includes(navigator.doNotTrack)
+      || ['1', 'yes'].includes(window.doNotTrack)
+      || navigator.globalPrivacyControl === true
+      || window.globalPrivacyControl === true;
+
+    if (!productionHosts.has(window.location.hostname) || privacySignal) return;
+    if (document.querySelector('script[data-typejung-standalone-analytics="true"]')) return;
+
+    window.va = window.va || function () {
+      (window.vaq = window.vaq || []).push(arguments);
+    };
+
+    // Preserve aggregate page paths while excluding query and hash identifiers.
+    window.va('beforeSend', (event) => ({ ...event, url: window.location.origin + window.location.pathname }));
+
+    const analyticsScript = document.createElement('script');
+    analyticsScript.defer = true;
+    analyticsScript.src = '/_vercel/insights/script.js';
+    analyticsScript.dataset.typejungStandaloneAnalytics = 'true';
+    document.head.appendChild(analyticsScript);
+  })();
 </script>
 </head>
 <body>

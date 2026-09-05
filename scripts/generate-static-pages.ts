@@ -6,6 +6,7 @@
 
 import { functionSEO, functionData, typeSEO, typeData } from '../data/seo-config.js';
 import { seoLandingPages } from './seo-data.mjs';
+import { standaloneAnalyticsSnippet } from './standalone-analytics.mjs';
 import { writeFileSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -712,6 +713,7 @@ ${renderJsonLd(breadcrumbs)}
 <script type="application/ld+json">
 ${renderJsonLd(faqSchema)}
 </script>
+${standaloneAnalyticsSnippet}
 </head>
 <body>
   <nav>
@@ -901,6 +903,7 @@ ${getHead(seo.title, seo.description, path)}
 <script type="application/ld+json">
 ${renderJsonLd(breadcrumbs)}
 </script>
+${standaloneAnalyticsSnippet}
 </head>
 <body>
   <nav>
@@ -1028,6 +1031,7 @@ ${getHead(seo.title, seo.description, path)}
 <script type="application/ld+json">
 ${renderJsonLd(breadcrumbs)}
 </script>
+${standaloneAnalyticsSnippet}
 </head>
 <body>
   <nav>

@@ -333,7 +333,7 @@ function generateAssessmentNoscript() {
     <section style="margin-bottom: 35px;">
       <h2 style="color: #451a03; border-bottom: 1px solid #e7e5e4; padding-bottom: 8px;">How It Works</h2>
       <ol>
-        <li><strong>Answer 42 questions</strong> - Rate how much each statement describes you (12-16 minutes)</li>
+        <li><strong>Answer 42 questions</strong> - Rate how much each statement describes you (20-25 minutes)</li>
         <li><strong>Get your results</strong> - See your cognitive function scores in a function-stack map</li>
         <li><strong>Explore insights</strong> - Read the synthesis of your dominant-inferior pattern</li>
         <li><strong>Share your results</strong> - Get a unique link to share with others</li>

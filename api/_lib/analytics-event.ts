@@ -211,6 +211,22 @@ export function normalizeAnalyticsEvent(body: unknown): NormalizedAnalyticsEvent
   if (!input) return null;
 
   const eventName = cleanToken(input.eventName ?? input.event ?? input.name, 80);
+  if (eventName === 'result_reaction_submitted') {
+    const properties = input.properties as Record<string, unknown> | undefined;
+    const reaction = properties?.reaction;
+    if (reaction !== 'yes' && reaction !== 'somewhat' && reaction !== 'not_yet') return null;
+
+    // Keep this first-party feedback record free of assessment and contact data.
+    // Do not pass arbitrary top-level fields or URL query parameters through.
+    return normalizeFunnelEvent({
+      eventId: input.eventId ?? input.event_id,
+      anonymousId: input.anonymousId ?? input.anonymous_id,
+      occurredAt: input.occurredAt ?? input.occurred_at,
+      path: '/results',
+      properties: { reaction },
+    }, eventName);
+  }
+
   if (eventName && CREATOR_EVENT_NAMES.has(eventName)) {
     return normalizeCreatorEvent(input, eventName);
   }
@@ -223,5 +239,8 @@ export function normalizeAnalyticsEvent(body: unknown): NormalizedAnalyticsEvent
 }
 
 export async function trackNormalizedAnalyticsEvent(event: NormalizedAnalyticsEvent): Promise<void> {
+  // The existing browser event already reaches Vercel; this endpoint only adds
+  // first-party persistence for result feedback, not a second Vercel event.
+  if (event.eventName === 'result_reaction_submitted') return;
   await trackVercelServerEvent(event.eventName, event.properties);
 }

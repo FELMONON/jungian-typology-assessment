@@ -2166,7 +2166,7 @@ export const seoLandingPages = [
     h1: 'A Jungian test that goes beyond a four-letter label',
     intro: [
       'TypeJung is a Jungian self-assessment for people who want more than a quick type label. It maps self-reported patterns associated with all 8 cognitive functions, then turns that profile into an educational map of attention, decision-making, and stress patterns.',
-      'The free assessment takes about 12 to 16 minutes. Paid reports are optional one-time CAD upgrades; TYPEJUNG30 currently brings Insight to CA$7 and Mastery to CA$20.30 on Stripe.',
+      'The free assessment takes about 20 to 25 minutes. Paid reports are optional one-time CAD upgrades; TYPEJUNG30 currently brings Insight to CA$7 and Mastery to CA$20.30 on Stripe.',
     ],
     intent: {
       bestFor: 'Searchers who want a Jungian test with visible cognitive-function evidence, not only a fast type label.',
@@ -2244,7 +2244,7 @@ export const seoLandingPages = [
       },
       {
         question: 'How long does the Jungian test take?',
-        answer: 'Most people complete the free 42-question assessment in about 12 to 16 minutes.',
+        answer: 'Most people complete the free 42-question assessment in about 20 to 25 minutes.',
       },
       {
         question: 'Does TypeJung give me an MBTI type?',

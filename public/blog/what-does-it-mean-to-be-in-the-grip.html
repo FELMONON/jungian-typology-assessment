@@ -23,7 +23,7 @@
       "headline": "What Does It Mean to Be in the Grip?",
       "description": "A practical guide to grip stress in Jungian typology and how the inferior function can take over under pressure.",
       "datePublished": "2026-03-20",
-      "dateModified": "2026-08-09",
+      "dateModified": "2026-09-05",
       "author": {
         "@type": "Organization",
         "name": "TypeJung",
@@ -114,6 +114,31 @@
     footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e7e5e4; color: #78716c; text-align: center; }
     @media (max-width: 640px) { nav a { display: block; margin: 8px 0; } body { padding: 28px 16px; } .save-link-form-row { grid-template-columns: 1fr; } .secondary-link { display: block; margin: 14px 0 0; } }
 </style>
+<script data-typejung-standalone-analytics>
+  (() => {
+    const productionHosts = new Set(['typejung.com', 'www.typejung.com']);
+    const privacySignal = ['1', 'yes'].includes(navigator.doNotTrack)
+      || ['1', 'yes'].includes(window.doNotTrack)
+      || navigator.globalPrivacyControl === true
+      || window.globalPrivacyControl === true;
+
+    if (!productionHosts.has(window.location.hostname) || privacySignal) return;
+    if (document.querySelector('script[data-typejung-standalone-analytics="true"]')) return;
+
+    window.va = window.va || function () {
+      (window.vaq = window.vaq || []).push(arguments);
+    };
+
+    // Preserve aggregate page paths while excluding query and hash identifiers.
+    window.va('beforeSend', (event) => ({ ...event, url: window.location.origin + window.location.pathname }));
+
+    const analyticsScript = document.createElement('script');
+    analyticsScript.defer = true;
+    analyticsScript.src = '/_vercel/insights/script.js';
+    analyticsScript.dataset.typejungStandaloneAnalytics = 'true';
+    document.head.appendChild(analyticsScript);
+  })();
+</script>
 </head>
 <body>
 

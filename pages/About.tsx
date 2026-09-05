@@ -87,23 +87,23 @@ export const About: React.FC = () => {
 
         <div className="prose-editorial mb-10 font-serif">
           <p>
-            Most tests (e.g., MBTI) force choices: "Logic OR feelings?" This assumes opposites cancel
-            each other—and outputs rigid 16 types.
+            TypeJung combines scenario answers, stress-pattern prompts, body-signal prompts, and
+            an introversion/extraversion measure to propose a function-stack pattern.
           </p>
-          <p className="text-jung-accent font-semibold">We do the opposite:</p>
+          <p className="text-jung-accent font-semibold">What the current assessment does:</p>
         </div>
 
         <div className="space-y-4 mb-10">
           {[
             {
               icon: Target,
-              title: 'Independent Scoring',
-              description: 'All 8 processes are scored separately so mixed patterns stay visible.'
+              title: 'Four Channels, Inferred Stack',
+              description: 'Thinking, feeling, sensation, and intuition scores combine with attitude direction to derive the eight-function display.'
             },
             {
               icon: Scale,
               title: 'Nuanced Results',
-              description: 'You might be high in both logical organization (Te) and personal values (Fi)—real life isn\'t black/white.'
+              description: 'The map keeps relative channel scores visible. Its function-attitude values are derived, not eight independent measurements.'
             },
             {
               icon: ArrowRight,
@@ -141,13 +141,13 @@ export const About: React.FC = () => {
           </div>
           <div>
             <h2 className="text-heading text-2xl md:text-3xl font-serif">Our Methodology</h2>
-            <p className="text-body text-jung-muted mt-1 font-serif">Research-informed, not diagnostic</p>
+            <p className="text-body text-jung-muted mt-1 font-serif">Theory-informed, not diagnostic</p>
           </div>
         </div>
 
         <p className="text-body text-jung-secondary mb-10 font-serif">
-          We draw from Jung's writings, Marie-Louise von Franz's lectures on typology, and function-first
-          independent scoring traditions. The result is an educational self-reflection framework, not a clinical instrument.
+          We draw from Jung's writings and Marie-Louise von Franz's lectures on typology.
+          The current scoring method is an educational self-reflection framework, not a clinical instrument.
         </p>
 
         <div className="space-y-10">
@@ -155,20 +155,22 @@ export const About: React.FC = () => {
           <div>
             <h3 className="text-lg font-serif font-bold text-jung-accent mb-4 flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-jung-accent text-white flex items-center justify-center text-sm">1</span>
-              Independent Measurement of 8 Processes
+              Four Channel Scores and a Derived Function Stack
             </h3>
             <div className="text-body text-jung-secondary space-y-4 pl-10 font-serif">
               <p>
-                Traditional tests pit functions against each other as mutually exclusive. TypeJung uses a
-                function-first approach by scoring each process (Te, Ti, Fe, etc.) separately.
+                The 42-question assessment scores thinking, feeling, sensation, and intuition using
+                behavioral, stress, and body-signal answers. Six attitude prompts separately estimate
+                an introversion/extraversion direction.
               </p>
               <p>
-                <strong>Why?</strong> Real people use multiple processes fluidly. High Te + high Fe?
-                Possible—and worth reflecting on as a more nuanced answer pattern.
+                The scoring rules combine those signals into a proposed stack. The eight-function view
+                assigns function-attitude labels and derived values to that pattern; it does not
+                independently measure Te, Ti, Fe, Fi, Se, Si, Ne, and Ni.
               </p>
               <div className="bg-jung-surface rounded-lg p-4 border border-jung-border">
                 <p className="text-sm text-jung-muted italic">
-                  <strong className="not-italic">Analogy:</strong> Like measuring ingredients separately in a recipe—not forcing "salt OR sugar?"
+                  <strong className="not-italic">Read it as a hypothesis:</strong> The eight-function display is an interpretation of the channel scores, not eight separate test scales.
                 </p>
               </div>
             </div>
@@ -216,7 +218,8 @@ export const About: React.FC = () => {
                 <strong>Theoretical:</strong> Suggested "stack" based on Jung's opposites/compensation.
               </p>
               <p>
-                Discrepancies? Not errors—opportunities for reflection (e.g., "Why do I avoid this function?").
+                A mismatch may reflect context, question wording, or limits in the scoring rules.
+                Do not assume the test is right when your experience disagrees.
               </p>
             </div>
           </div>
@@ -291,7 +294,15 @@ export const About: React.FC = () => {
                 </div>
 
                 <div>
-                  <p className="font-semibold text-jung-dark mb-1">3. Not Diagnosis</p>
+                  <p className="font-semibold text-jung-dark mb-1">3. Consistency Is Not Accuracy</p>
+                  <p className="text-sm text-jung-secondary font-serif">
+                    The consistency percentage is a rule-based agreement signal across answer layers.
+                    It is not the probability that your type is correct or a validated accuracy score.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-jung-dark mb-1">4. Not Diagnosis</p>
                   <p className="text-sm text-jung-secondary font-serif">
                     Educational/reflective only. It is not medical, mental-health, or diagnostic advice.
                   </p>

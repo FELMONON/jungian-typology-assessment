@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { growthBlogArticles } from './growth-blog-data.mjs';
+import { standaloneAnalyticsSnippet, withStandaloneAnalytics } from './standalone-analytics.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicBlogDir = join(__dirname, '..', 'public', 'blog');
@@ -306,6 +307,7 @@ const renderArticle = (article) => {
 ${articleSchema(article)}
   </script>
   <style>${style}</style>
+${standaloneAnalyticsSnippet}
 </head>
 <body>
 ${renderNav(sourceBase)}
@@ -372,6 +374,7 @@ ${style}
     .blog-card h2 { border: 0; padding: 0; margin: 8px 0 10px; font-size: 1.35rem; }
     .blog-card h2 a { color: #451a03; text-decoration: none; }
   </style>
+${standaloneAnalyticsSnippet}
 </head>
 <body>
 ${renderNav('blog_index')}
@@ -426,4 +429,11 @@ for (const article of growthBlogArticles) {
 }
 
 writeFileSync(join(publicBlogDir, 'index.html'), renderIndex());
+
+// These two indexed articles predate this generator. Preserve their editorial
+// HTML while keeping their analytics coverage consistent and idempotent.
+for (const slug of ['singer-loomis-vs-mbti', 'understanding-the-grip']) {
+  const file = join(publicBlogDir, `${slug}.html`);
+  writeFileSync(file, withStandaloneAnalytics(readFileSync(file, 'utf8')));
+}
 console.log(`Generated growth blog index with ${growthBlogArticles.length + 2} articles.`);

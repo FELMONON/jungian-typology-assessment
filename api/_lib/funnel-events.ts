@@ -22,6 +22,7 @@ export type FunnelEventInput = {
 };
 
 const FUNNEL_EVENT_NAMES = new Set([
+  'result_reaction_submitted',
   'assessment_started',
   'assessment_completed',
   'results_viewed',

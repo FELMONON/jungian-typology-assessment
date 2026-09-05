@@ -180,7 +180,7 @@
   ],
   "url": "https://typejung.com/jungian-test",
   "inLanguage": "en",
-  "dateModified": "2026-08-09",
+  "dateModified": "2026-09-05",
   "isPartOf": {
     "@type": "WebSite",
     "name": "TypeJung",
@@ -239,7 +239,7 @@
       "name": "How long does the Jungian test take?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Most people complete the free 42-question assessment in about 12 to 16 minutes."
+        "text": "Most people complete the free 42-question assessment in about 20 to 25 minutes."
       }
     },
     {
@@ -252,6 +252,31 @@
     }
   ]
 }
+</script>
+<script data-typejung-standalone-analytics>
+  (() => {
+    const productionHosts = new Set(['typejung.com', 'www.typejung.com']);
+    const privacySignal = ['1', 'yes'].includes(navigator.doNotTrack)
+      || ['1', 'yes'].includes(window.doNotTrack)
+      || navigator.globalPrivacyControl === true
+      || window.globalPrivacyControl === true;
+
+    if (!productionHosts.has(window.location.hostname) || privacySignal) return;
+    if (document.querySelector('script[data-typejung-standalone-analytics="true"]')) return;
+
+    window.va = window.va || function () {
+      (window.vaq = window.vaq || []).push(arguments);
+    };
+
+    // Preserve aggregate page paths while excluding query and hash identifiers.
+    window.va('beforeSend', (event) => ({ ...event, url: window.location.origin + window.location.pathname }));
+
+    const analyticsScript = document.createElement('script');
+    analyticsScript.defer = true;
+    analyticsScript.src = '/_vercel/insights/script.js';
+    analyticsScript.dataset.typejungStandaloneAnalytics = 'true';
+    document.head.appendChild(analyticsScript);
+  })();
 </script>
 </head>
 <body>
@@ -271,7 +296,7 @@
     <p class="eyebrow">Jungian test</p>
     <h1>A Jungian test that goes beyond a four-letter label</h1>
     <p class="subtitle">TypeJung is a Jungian self-assessment for people who want more than a quick type label. It maps self-reported patterns associated with all 8 cognitive functions, then turns that profile into an educational map of attention, decision-making, and stress patterns.</p>
-    <p class="subtitle">The free assessment takes about 12 to 16 minutes. Paid reports are optional one-time CAD upgrades; TYPEJUNG30 currently brings Insight to CA$7 and Mastery to CA$20.30 on Stripe.</p>
+    <p class="subtitle">The free assessment takes about 20 to 25 minutes. Paid reports are optional one-time CAD upgrades; TYPEJUNG30 currently brings Insight to CA$7 and Mastery to CA$20.30 on Stripe.</p>
     <div class="hero-actions">
       <a href="/assessment?source=seo_jungian_test_hero" class="btn">Start the free assessment</a>
       <a href="/sample-report?source=seo_jungian_test_hero_sample" class="secondary-btn">View sample report</a>
@@ -424,7 +449,7 @@
     </div>
     <div class="faq-item">
       <h3>How long does the Jungian test take?</h3>
-      <p>Most people complete the free 42-question assessment in about 12 to 16 minutes.</p>
+      <p>Most people complete the free 42-question assessment in about 20 to 25 minutes.</p>
     </div>
     <div class="faq-item">
       <h3>Does TypeJung give me an MBTI type?</h3>

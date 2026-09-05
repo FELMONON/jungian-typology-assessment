@@ -97,7 +97,7 @@ const COMPARISON_FEATURES = [
   { name: 'Shadow, growth, and dream prompts', free: false, insight: true, mastery: true },
   { name: 'Type Depth Guide (PDF)', free: false, insight: true, mastery: true },
   { name: 'AI Type Guide', free: false, insight: false, mastery: true },
-  { name: 'Reassessment tracking', free: false, insight: false, mastery: true },
+  { name: 'Saved assessment history (account required)', free: true, insight: true, mastery: true },
 ];
 
 const FAQ_ITEMS = [

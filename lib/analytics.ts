@@ -109,6 +109,7 @@ function vercelEventProperties(params?: Record<string, any>): Record<string, str
 
 const FUNNEL_ANONYMOUS_ID_STORAGE_KEY = 'typejung_funnel_anonymous_id';
 const FUNNEL_MIRROR_EVENT_NAMES = new Set([
+  'result_reaction_submitted',
   'assessment_started',
   'assessment_completed',
   'results_viewed',
@@ -150,12 +151,16 @@ export function getFunnelAnonymousId(): string {
 function mirrorFunnelEvent(eventName: string, params?: Record<string, any>): void {
   if (typeof window === 'undefined' || !FUNNEL_MIRROR_EVENT_NAMES.has(eventName)) return;
 
-  const properties = vercelEventProperties(params);
+  const isResultReaction = eventName === 'result_reaction_submitted';
+  const reaction = params?.reaction;
+  if (isResultReaction && !['yes', 'somewhat', 'not_yet'].includes(reaction)) return;
+  // Result feedback needs only an enum, not scores, answers, or contact details.
+  const properties = isResultReaction ? { reaction } : vercelEventProperties(params);
   const body = JSON.stringify({
     eventName,
     eventId: `client:${eventName}:${randomFunnelToken()}`,
     anonymousId: getFunnelAnonymousId(),
-    path: `${window.location.pathname}${window.location.search}`,
+    path: isResultReaction ? '/results' : `${window.location.pathname}${window.location.search}`,
     occurredAt: new Date().toISOString(),
     properties,
   });
@@ -163,8 +168,7 @@ function mirrorFunnelEvent(eventName: string, params?: Record<string, any>): voi
   try {
     if (navigator.sendBeacon) {
       const blob = new Blob([body], { type: 'application/json' });
-      navigator.sendBeacon('/api/analytics', blob);
-      return;
+      if (navigator.sendBeacon('/api/analytics', blob)) return;
     }
 
     void fetch('/api/analytics', {
@@ -203,6 +207,9 @@ function safeTrackEvent(
 
     let tracked = false;
 
+    // First-party funnel data must not depend on a third-party SDK succeeding.
+    mirrorFunnelEvent(eventName, eventParams);
+
     if (GA_MEASUREMENT_ID && window.gtag) {
       window.gtag('event', eventName, eventParams);
       tracked = true;
@@ -210,7 +217,6 @@ function safeTrackEvent(
 
     trackVercelEvent(eventName, vercelEventProperties(eventParams));
     tracked = true;
-    mirrorFunnelEvent(eventName, eventParams);
 
     if (tracked) {
       analyticsState.lastEventTime = Date.now();
