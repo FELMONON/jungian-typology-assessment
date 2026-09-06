@@ -3334,30 +3334,30 @@ export const seoLandingPages = [
     description: 'Take a free 42-question Jungian cognitive functions test that maps Ni, Ne, Si, Se, Ti, Te, Fi, and Fe, then shows your function stack and dominant-inferior pattern.',
     keywords: ['Jungian cognitive functions test', 'free Jungian cognitive functions test', 'Jung functions test', 'Ni Ne Si Se Ti Te Fi Fe test', 'Jungian function stack test', 'cognitive function test'],
     eyebrow: 'Jungian functions test',
-    h1: 'Free Jungian cognitive functions test for Ni Ne Si Se Ti Te Fi Fe',
+    h1: 'Free Jungian cognitive functions test',
     intro: [
-      'A serious Jungian cognitive functions test should do more than hand you a four-letter label. It should show how your pattern is built across Ni, Ne, Si, Se, Ti, Te, Fi, and Fe.',
-      'TypeJung starts with a free 42-question assessment, maps all 8 function-attitudes, then explains the dominant-inferior axis that often carries the clearest growth tension.',
+      'Explore how you take in the world, make decisions, and respond to stress. Answer 42 real-life questions and receive your free cognitive-function map. Allow 20 to 25 minutes; your progress saves on this device.',
+      'No signup or payment is required to read your core result. The optional Insight report adds ten AI-generated interpretation sections for CA$7, paid once. Read the sample before you decide.',
     ],
     intent: {
       bestFor: 'People searching specifically for a Jungian cognitive functions test, function stack test, or full Ni Ne Si Se Ti Te Fi Fe assessment.',
-      measures: 'Introverted and extraverted attitudes across intuition, sensing, thinking, and feeling, plus likely type pattern and dominant-inferior interpretation.',
+      measures: 'Four function channels and attention direction, combined into a derived eight-function map and a suggested stack.',
       privacy: 'Use the free function-stack map first. Paid interpretation is optional and should only be used if the map feels accurate.',
     },
     sections: [
       {
-        heading: 'Quick answer: what this Jungian cognitive functions test measures',
+        heading: 'What your free map can tell you',
         body: [
-          'This is the TypeJung page built for people searching for a Jungian cognitive functions test. The free assessment uses 42 scenario prompts, then returns an 8-function profile before any paid report.',
-          'The output separates Jungian function-attitudes instead of collapsing everything into a four-letter label. You can inspect the Ni, Ne, Si, Se, Ti, Te, Fi, and Fe score shape, compare the likely function stack, and look at the dominant-inferior axis that often explains stress patterns.',
+          'TypeJung scores four function channels and attention direction, then derives the eight displayed function-attitudes. Those eight values are not independent psychological measurements.',
+          'Use your suggested stack to explore everyday strengths and less familiar patterns under pressure. Read the result as a working interpretation of your answers, with room for uncertainty and examples that do not fit.',
         ],
         table: {
-          headers: ['Search intent', 'What TypeJung returns', 'Why it matters'],
+          headers: ['Explore', 'What you receive', 'How to use it'],
           rows: [
-            ['Jungian cognitive functions test', 'A free 42-question map of all 8 function-attitudes', 'Matches the full-function search intent instead of giving only a type label'],
-            ['Ni Ne Si Se Ti Te Fi Fe test', 'Separate scores for each function-attitude', 'Lets you see whether the result is differentiated or close'],
+            ['Jungian cognitive functions test', 'A free 42-question map of all 8 function-attitudes', 'A starting point for observing your habits'],
+            ['Ni Ne Si Se Ti Te Fi Fe test', 'Derived values for each function-attitude', 'Lets you see whether the result is differentiated or close'],
             ['Jungian function stack test', 'A likely dominant, auxiliary, tertiary, and inferior pattern', 'Turns the score profile into a readable stack hypothesis'],
-            ['Free cognitive function test', 'A no-card result before optional paid interpretation', 'Lets searchers judge usefulness before checkout'],
+            ['Free cognitive function test', 'A no-card result before optional paid interpretation', 'Decide whether a deeper report would help'],
           ],
         },
         links: [
@@ -3367,10 +3367,10 @@ export const seoLandingPages = [
         ],
       },
       {
-        heading: 'Take a Jungian cognitive functions test, not a label quiz',
+        heading: 'Start from your everyday experience',
         body: [
-          'Most personality quizzes rush toward a type code. A Jungian cognitive functions test should first ask how attention gathers information and how judgment makes decisions.',
-          'TypeJung uses scenario evidence to map the function pattern before interpreting type. That gives you a practical profile of attention, judgment, stress, and development instead of a flat label.',
+          'Choose the answer closest to what actually happens in your life. There is a none option when a question misses you, and you can review previous answers before finishing.',
+          'The questions cover behavior, stress, body cues, and attention direction. You work through one question at a time and can pause whenever you need.',
         ],
         bullets: [
           'All 8 function-attitudes: Ni, Ne, Si, Se, Ti, Te, Fi, and Fe',
@@ -3418,13 +3418,13 @@ export const seoLandingPages = [
       {
         heading: 'Function stack versus function profile',
         body: [
-          'A function stack is a theory-based interpretation of how functions tend to organize in a type. A function profile is the measured pattern from your answers. The two should inform each other, but they are not the same thing.',
+          'A function stack is a theory-based interpretation of how functions tend to organize in a type. A TypeJung function profile is a derived interpretation of the scored answer channels. The two should inform each other, but they are not the same thing.',
           'TypeJung starts with the profile, then interprets likely stack patterns. That makes it easier to notice when a type code is plausible but not yet certain.',
         ],
         table: {
           headers: ['Concept', 'What it means', 'How TypeJung uses it'],
           rows: [
-            ['Function profile', 'The score shape across all 8 functions', 'Shows the direct answer pattern'],
+            ['Function profile', 'The score shape across all 8 functions', 'Shows the derived function-attitude pattern'],
             ['Function stack', 'A model of dominant, auxiliary, tertiary, and inferior positions', 'Helps interpret the score shape'],
             ['Dominant-inferior axis', 'The tension between the most trusted and least conscious poles', 'Frames stress and development'],
           ],

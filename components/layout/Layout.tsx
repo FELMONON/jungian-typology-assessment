@@ -1,7 +1,17 @@
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  LogIn,
+  LogOut,
+  Menu,
+  Trophy,
+  User,
+  X,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, CheckCircle2, Clock, CreditCard, LogIn, LogOut, Menu, Trophy, User, X } from 'lucide-react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { TypeJungMark } from '../brand/TypeJungMark';
 import { useAuth } from '../../hooks/use-auth';
 import { usePageTracking } from '../../hooks/useAnalytics';
 import { trackEvent } from '../../lib/analytics';
@@ -18,29 +28,43 @@ import {
   readPendingCheckout,
   type PendingCheckout,
 } from '../../lib/pending-checkout';
+import { TypeJungMark } from '../brand/TypeJungMark';
 
 const navigation = [
-  { to: '/', label: 'Home' },
-  { to: '/learn', label: 'Learn' },
+  { to: '/methodology', label: 'How it works' },
+  { to: '/sample-report', label: 'Sample report' },
   { to: '/pricing', label: 'Pricing' },
 ];
 
-const externalProofLinks = [
-  { href: 'https://github.com/felmonon/jungian-typology-assessment', label: 'GitHub source' },
-  { href: 'https://github.com/felmonon', label: 'Creator GitHub' },
-  { href: 'https://www.linkedin.com/in/felmonfekadu/', label: 'Creator LinkedIn' },
-];
-
-export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const Layout: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const isFocusedJourney =
+    location.pathname === '/assessment' ||
+    location.pathname.startsWith('/checkout') ||
+    location.pathname === '/success';
   const { user, isLoading, isAuthenticated, logout, isLoggingOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [pendingCheckout, setPendingCheckout] = useState<PendingCheckout | null>(null);
-  const [assessmentProgress, setAssessmentProgress] = useState<ResumableAssessmentProgress | null>(null);
+  const [pendingCheckout, setPendingCheckout] =
+    useState<PendingCheckout | null>(null);
+  const [assessmentProgress, setAssessmentProgress] =
+    useState<ResumableAssessmentProgress | null>(null);
 
   usePageTracking();
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setMobileMenuOpen(false);
+      document.getElementById('site-menu-toggle')?.focus();
+    };
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 8);
@@ -67,28 +91,35 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     window.addEventListener('focus', refreshOnReturn);
     window.addEventListener('pageshow', refreshOnReturn);
     window.addEventListener('storage', refreshOnReturn);
-    window.addEventListener('typejung:pending-checkout-changed', refreshOnReturn);
+    window.addEventListener(
+      'typejung:pending-checkout-changed',
+      refreshOnReturn,
+    );
 
     return () => {
       window.removeEventListener('focus', refreshOnReturn);
       window.removeEventListener('pageshow', refreshOnReturn);
       window.removeEventListener('storage', refreshOnReturn);
-      window.removeEventListener('typejung:pending-checkout-changed', refreshOnReturn);
+      window.removeEventListener(
+        'typejung:pending-checkout-changed',
+        refreshOnReturn,
+      );
     };
   }, []);
 
   const shouldShowPendingCheckout = Boolean(
-    pendingCheckout
-      && !location.pathname.startsWith('/checkout')
-      && location.pathname !== '/success'
+    pendingCheckout &&
+      !isFocusedJourney &&
+      !location.pathname.startsWith('/checkout') &&
+      location.pathname !== '/success',
   );
   const shouldShowAssessmentResume = Boolean(
-    assessmentProgress
-      && !shouldShowPendingCheckout
-      && !location.pathname.startsWith('/assessment')
-      && !location.pathname.startsWith('/checkout')
-      && location.pathname !== '/results'
-      && location.pathname !== '/success'
+    assessmentProgress &&
+      !shouldShowPendingCheckout &&
+      !location.pathname.startsWith('/assessment') &&
+      !location.pathname.startsWith('/checkout') &&
+      location.pathname !== '/results' &&
+      location.pathname !== '/success',
   );
   const pendingCheckoutViewKey = useMemo(() => {
     if (!pendingCheckout || !shouldShowPendingCheckout) return null;
@@ -107,15 +138,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       status: pendingCheckout.status,
       source: 'global_recovery_banner',
       original_checkout_source: pendingCheckout.source,
-      ...(pendingCheckout.utmCampaign ? { utm_campaign: pendingCheckout.utmCampaign } : {}),
-      ...(pendingCheckout.utmSource ? { utm_source: pendingCheckout.utmSource } : {}),
-      ...(pendingCheckout.sharedResult ? { shared_result: pendingCheckout.sharedResult } : {}),
+      ...(pendingCheckout.utmCampaign
+        ? { utm_campaign: pendingCheckout.utmCampaign }
+        : {}),
+      ...(pendingCheckout.utmSource
+        ? { utm_source: pendingCheckout.utmSource }
+        : {}),
+      ...(pendingCheckout.sharedResult
+        ? { shared_result: pendingCheckout.sharedResult }
+        : {}),
       parent_source: pendingCheckout.parentSource || pendingCheckout.source,
     };
   }, [pendingCheckout]);
 
   useEffect(() => {
-    if (!pendingCheckout || !shouldShowPendingCheckout || !pendingCheckoutViewKey) return;
+    if (
+      !pendingCheckout ||
+      !shouldShowPendingCheckout ||
+      !pendingCheckoutViewKey
+    )
+      return;
 
     try {
       if (sessionStorage.getItem(pendingCheckoutViewKey)) return;
@@ -127,7 +169,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     trackEvent('pending_checkout_banner_viewed', {
       ...(pendingCheckoutEventParams || {}),
     });
-  }, [pendingCheckout, pendingCheckoutEventParams, pendingCheckoutViewKey, shouldShowPendingCheckout]);
+  }, [
+    pendingCheckout,
+    pendingCheckoutEventParams,
+    pendingCheckoutViewKey,
+    shouldShowPendingCheckout,
+  ]);
 
   const resumePendingCheckout = () => {
     if (!pendingCheckout) return;
@@ -183,7 +230,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `inline-flex min-h-10 items-center border-b-2 px-1 pt-0.5 text-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-all ${
+    `inline-flex min-h-10 items-center border-b-2 px-1 pt-0.5 text-sm font-medium transition-all ${
       isActive
         ? 'border-jung-tension text-jung-dark'
         : 'border-transparent text-jung-muted hover:border-jung-border hover:text-jung-dark'
@@ -203,11 +250,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         className="inline-flex h-10 items-center gap-2 rounded-lg border border-jung-border bg-jung-surface px-3 text-sm font-medium text-jung-dark transition-colors hover:border-jung-accent-muted hover:bg-jung-accent-light"
       >
         {user?.profileImageUrl ? (
-          <img src={user.profileImageUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+          <img
+            src={user.profileImageUrl}
+            alt=""
+            className="h-6 w-6 rounded-full object-cover"
+          />
         ) : (
           <User className="h-4 w-4" />
         )}
-        <span className="max-w-24 truncate">{user?.firstName || 'Profile'}</span>
+        <span className="max-w-24 truncate">
+          {user?.firstName || 'Profile'}
+        </span>
       </Link>
       <button
         type="button"
@@ -229,6 +282,48 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     </Link>
   );
 
+  if (isFocusedJourney) {
+    return (
+      <div className="min-h-screen bg-jung-base text-jung-dark">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-jung-surface focus:p-3"
+        >
+          Skip to content
+        </a>
+        <header className="border-b border-jung-border-light bg-jung-surface/80">
+          <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
+            <Link
+              to="/"
+              aria-label="TypeJung home"
+              className="flex min-h-11 items-center gap-2"
+            >
+              <TypeJungMark size="sm" />
+              <span className="font-display text-xl">TypeJung</span>
+            </Link>
+            <Link
+              to={location.pathname === '/assessment' ? '/' : '/results'}
+              className="inline-flex min-h-11 items-center text-xs font-medium text-jung-secondary hover:text-jung-accent"
+            >
+              {location.pathname === '/assessment'
+                ? 'Save & exit'
+                : 'Back to my map'}
+              <ArrowRight className="ml-2 h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </header>
+        <main id="main-content">{children}</main>
+        <footer className="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 border-t border-jung-border-light px-5 py-6 text-xs text-jung-muted sm:px-8">
+          <span>TypeJung · Educational self-reflection</span>
+          <div className="flex gap-5">
+            <Link to="/privacy">Privacy</Link>
+            <a href="mailto:support@typejung.com">Support</a>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-jung-base text-jung-dark">
       <a
@@ -245,19 +340,32 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         }`}
       >
         <div className="lab-container flex items-center justify-between gap-4">
-          <Link to="/" className="flex min-h-11 items-center gap-3" aria-label="TypeJung home">
+          <Link
+            to="/"
+            className="flex min-h-11 items-center gap-3"
+            aria-label="TypeJung home"
+          >
             <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-jung-border bg-jung-surface shadow-sm sm:h-10 sm:w-10">
               <TypeJungMark size="sm" />
             </span>
             <span className="flex flex-col">
-              <span className="font-display text-xl leading-none text-jung-dark sm:text-2xl">TypeJung</span>
-              <span className="text-[11px] font-medium text-jung-muted sm:text-xs">Free function-stack map</span>
+              <span className="font-display text-xl leading-none text-jung-dark sm:text-2xl">
+                TypeJung
+              </span>
+              <span className="text-[11px] font-medium text-jung-muted sm:text-xs">
+                Free function-stack map
+              </span>
             </span>
           </Link>
 
           <nav className="hidden items-center gap-7 lg:flex">
             {navigation.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === '/'} className={navLinkClass}>
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={navLinkClass}
+              >
                 {item.label}
               </NavLink>
             ))}
@@ -269,30 +377,43 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             ) : (
               accountAction
             )}
-            <Link
-              to="/assessment"
-              className="btn-premium hidden !min-h-10 !py-2 text-sm sm:inline-flex"
-            >
-              Start free
-            </Link>
+            <div className="hidden sm:block">
+              <Link
+                to="/assessment"
+                className="btn-premium !min-h-10 !py-2 text-sm"
+              >
+                Start free
+              </Link>
+            </div>
             <button
               type="button"
               onClick={() => setMobileMenuOpen((open) => !open)}
               className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-jung-border bg-jung-surface text-jung-dark transition-colors hover:bg-jung-surface-alt lg:hidden"
               aria-expanded={mobileMenuOpen}
+              id="site-menu-toggle"
+              aria-controls="site-mobile-menu"
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="lg:hidden">
+          <div id="site-mobile-menu" className="lg:hidden">
             <div className="lab-container pb-4 pt-3">
               <div className="rounded-lg border border-jung-border bg-jung-surface p-2 shadow-lg">
                 {navigation.map((item) => (
-                  <NavLink key={item.to} to={item.to} end={item.to === '/'} className={mobileNavLinkClass}>
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    className={mobileNavLinkClass}
+                  >
                     {item.label}
                   </NavLink>
                 ))}
@@ -377,7 +498,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 onClick={resumePendingCheckout}
                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-jung-accent px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px hover:bg-jung-accent-hover"
               >
-                {pendingCheckout.status === 'expired' ? 'Restart checkout' : 'Resume payment'}
+                {pendingCheckout.status === 'expired'
+                  ? 'Restart checkout'
+                  : 'Resume payment'}
                 <ArrowRight className="h-4 w-4" />
               </button>
               <button
@@ -402,10 +525,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-jung-dark">
-                  Your free assessment is {assessmentProgress.progressPercent}% complete.
+                  Your free assessment is {assessmentProgress.progressPercent}%
+                  complete.
                 </p>
                 <p className="mt-1 text-xs leading-5 text-jung-secondary">
-                  Resume from {assessmentProgress.answeredCount} of {assessmentProgress.totalQuestions} answered questions and finish the map before deciding on any upgrade.
+                  Resume from {assessmentProgress.answeredCount} of{' '}
+                  {assessmentProgress.totalQuestions} answered questions and
+                  finish the map before deciding on any upgrade.
                 </p>
               </div>
             </div>
@@ -433,95 +559,82 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       <main id="main-content">{children}</main>
 
-      <footer className="rule-double bg-jung-surface/70 pt-12 pb-28 md:pb-12">
-        <div className="lab-container grid gap-8 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
+      <footer className="border-t border-jung-border bg-jung-surface">
+        <div className="lab-container grid gap-8 py-10 md:grid-cols-[1.2fr_1fr_1fr]">
           <div>
-            <Link to="/" className="mb-4 inline-flex min-h-11 items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-jung-border bg-jung-surface">
-                <TypeJungMark size="sm" className="scale-90" />
-              </span>
-              <span className="font-display text-2xl text-jung-dark">TypeJung</span>
+            <Link to="/" className="inline-flex min-h-11 items-center gap-2">
+              <TypeJungMark size="sm" />
+              <span className="font-display text-2xl">TypeJung</span>
             </Link>
-            <p className="annotation max-w-sm text-sm">
-              A Jungian cognitive function assessment for mapping strengths, stress edges, and growth patterns.
+            <p className="mt-3 max-w-xs text-sm leading-6 text-jung-muted">
+              Explore the pattern behind your personality. A tool for
+              educational self-reflection.
             </p>
-          </div>
-
-	          <nav aria-label="Explore">
-	            <h2 className="text-label mb-4">Explore</h2>
-	            <div className="grid gap-2 text-sm text-jung-secondary">
-	              <Link to="/assessment" className="inline-flex min-h-11 items-center hover:text-jung-accent">Assessment</Link>
-	              <Link to="/pricing" className="inline-flex min-h-11 items-center hover:text-jung-accent">Pricing</Link>
-	              <Link to="/methodology" className="inline-flex min-h-11 items-center hover:text-jung-accent">Methodology</Link>
-	              <Link to="/debrief" className="inline-flex min-h-11 items-center hover:text-jung-accent">Personal Type Debrief</Link>
-	              <Link to="/learn" className="inline-flex min-h-11 items-center hover:text-jung-accent">Learn the theory</Link>
-	            </div>
-	          </nav>
-
-	          <nav aria-label="Guides">
-	            <h2 className="text-label mb-4">Guides</h2>
-	            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-jung-secondary lg:grid-cols-1 lg:gap-2">
-	              <a href="/guides" className="inline-flex min-h-11 items-center hover:text-jung-accent">All guides</a>
-	              <a href="/jungian-cognitive-functions-test" className="inline-flex min-h-11 items-center hover:text-jung-accent">Jungian cognitive functions test</a>
-	              <a href="/free-cognitive-function-test" className="inline-flex min-h-11 items-center hover:text-jung-accent">Free cognitive function test</a>
-	              <a href="/cognitive-function-test" className="inline-flex min-h-11 items-center hover:text-jung-accent">Cognitive function test</a>
-	              <a href="/inferior-function-test" className="inline-flex min-h-11 items-center hover:text-jung-accent">Inferior function test</a>
-	              <a href="/best-cognitive-functions-test" className="inline-flex min-h-11 items-center hover:text-jung-accent">Best cognitive functions test</a>
-	              <a href="/mbti-test-alternative" className="inline-flex min-h-11 items-center hover:text-jung-accent">MBTI test alternative</a>
-	              <a href="/sakinorva-alternative" className="inline-flex min-h-11 items-center hover:text-jung-accent">Sakinorva alternative</a>
-	              <a href="/16personalities-alternative" className="inline-flex min-h-11 items-center hover:text-jung-accent">16Personalities alternative</a>
-	              <a href="/infj-vs-infp-test" className="inline-flex min-h-11 items-center hover:text-jung-accent">INFJ vs INFP test</a>
-	              <a href="/intj-vs-intp-test" className="inline-flex min-h-11 items-center hover:text-jung-accent">INTJ vs INTP test</a>
-	            </div>
-	          </nav>
-
-	          <nav aria-label="Account">
-	            <h2 className="text-label mb-4">Account</h2>
-	            <div className="grid gap-2 text-sm text-jung-secondary">
-	              <Link to="/auth" className="inline-flex min-h-11 items-center hover:text-jung-accent">Sign in</Link>
-	              <Link to="/privacy" className="inline-flex min-h-11 items-center hover:text-jung-accent">Privacy</Link>
-	              <Link to="/terms" className="inline-flex min-h-11 items-center hover:text-jung-accent">Terms</Link>
-                  {externalProofLinks.map((link) => (
-                    <a
-                      key={link.href}
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex min-h-11 items-center hover:text-jung-accent"
-                    >
-                      {link.label}
-                    </a>
-                  ))}
-	              <a
-	                href="https://x.com/typejung"
-	                target="_blank"
-	                rel="noopener noreferrer"
-	                className="inline-flex min-h-11 items-center gap-1.5 hover:text-jung-accent"
-	              >
-	                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-	                @typejung on X
-	              </a>
-	            </div>
-	          </nav>
-        </div>
-        <div className="lab-container mt-10 flex flex-col gap-3 border-t border-jung-border pt-6 text-xs text-jung-muted sm:flex-row sm:items-center sm:justify-between">
-          <span>&copy; {new Date().getFullYear()} TypeJung</span>
-          <div className="flex items-center gap-4">
             <a
-              href="https://x.com/typejung"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-1.5 text-jung-muted hover:text-jung-accent transition-colors"
-              aria-label="TypeJung on X"
+              href="mailto:support@typejung.com"
+              className="mt-3 inline-flex min-h-11 items-center text-xs text-jung-accent"
             >
-              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-              @typejung
+              support@typejung.com
             </a>
-            <span className="inline-flex items-center gap-2">
-              <BookOpen className="h-3.5 w-3.5" />
-              Not a four-letter label
-            </span>
           </div>
+          <nav aria-label="Explore TypeJung">
+            <p className="journey-eyebrow mb-3">Explore</p>
+            <div className="grid grid-cols-2 gap-x-4 text-xs text-jung-secondary">
+              {[
+                ['/assessment', 'Free assessment'],
+                ['/pricing', 'Pricing'],
+                ['/sample-report', 'Sample report'],
+                ['/methodology', 'Methodology'],
+                ['/learn', 'Learn the theory'],
+                ['/debrief', 'Personal debrief'],
+              ].map(([to, label]) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="inline-flex min-h-11 items-center hover:text-jung-accent"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+          <nav aria-label="Help and resources">
+            <p className="journey-eyebrow mb-3">Good to know</p>
+            <div className="grid grid-cols-2 gap-x-4 text-xs text-jung-secondary">
+              {[
+                ['/about', 'About TypeJung'],
+                ['/auth', 'Account'],
+                ['/privacy', 'Privacy'],
+                ['/terms', 'Terms'],
+              ].map(([to, label]) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="inline-flex min-h-11 items-center hover:text-jung-accent"
+                >
+                  {label}
+                </Link>
+              ))}
+              <a
+                href="/guides"
+                className="inline-flex min-h-11 items-center hover:text-jung-accent"
+              >
+                All guides
+              </a>
+              <a
+                href="https://github.com/felmonon/jungian-typology-assessment"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center hover:text-jung-accent"
+              >
+                View source
+              </a>
+            </div>
+          </nav>
+        </div>
+        <div className="lab-container flex flex-wrap justify-between gap-3 border-t border-jung-border-light py-5 text-[11px] text-jung-muted">
+          <span>© {new Date().getFullYear()} TypeJung</span>
+          <span>Made for curiosity and reflection.</span>
         </div>
       </footer>
     </div>

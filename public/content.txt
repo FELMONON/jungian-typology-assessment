@@ -1,6 +1,6 @@
 # TypeJung - Map All 8 Cognitive Functions
 # Website: https://typejung.com
-# Last Updated: 2026-09-05
+# Last Updated: 2026-09-06
 
 ================================================================================
 ABOUT
@@ -339,7 +339,7 @@ Jungian cognitive functions test:
 https://typejung.com/jungian-cognitive-functions-test
 Take a free 42-question Jungian cognitive functions test that maps Ni, Ne, Si, Se, Ti, Te, Fi, and Fe, then shows your function stack and dominant-inferior pattern.
 Best for: People searching specifically for a Jungian cognitive functions test, function stack test, or full Ni Ne Si Se Ti Te Fi Fe assessment.
-Maps: Introverted and extraverted attitudes across intuition, sensing, thinking, and feeling, plus likely type pattern and dominant-inferior interpretation.
+Maps: Four function channels and attention direction, combined into a derived eight-function map and a suggested stack.
 
 Jungian typology:
 https://typejung.com/jungian-typology

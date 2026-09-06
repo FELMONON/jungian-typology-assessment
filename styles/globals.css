@@ -73,6 +73,20 @@ html {
   background: var(--color-jung-base);
 }
 
+.journey-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.7;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-jung-accent);
+}
+
+.journey-example {
+  box-shadow: 0 24px 70px -32px rgba(29, 63, 40, 0.22);
+}
+
 body {
   min-width: 320px;
   margin: 0;

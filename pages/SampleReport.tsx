@@ -1,569 +1,221 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowRight, FileText } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  Brain,
-  Check,
-  Compass,
-  FileText,
-  Heart,
-  MessageCircle,
-  Sparkles,
-  Target,
-} from 'lucide-react';
-import { DiscountCaptureCard } from '../components/discount/DiscountCaptureCard';
 import { Button } from '../components/ui/Button';
-import { discountedPriceLabel, EMAIL_CAPTURE_OFFER } from '../data/discount';
-import { DEBRIEF_OFFER } from '../data/debrief';
-import { PRICING, type PaidTierId } from '../data/pricing';
-import { ATTITUDE_LABELS, FUNCTION_LABELS } from '../data/depthAssessment';
+import { discountedPriceLabel } from '../data/discount';
+import { PRICING } from '../data/pricing';
 import { PAGE_SEO, useSEO } from '../hooks/useSEO';
-import { AnalyticsEvents, trackEvent } from '../lib/analytics';
 import { pathWithSource } from '../lib/acquisition-source';
+import { AnalyticsEvents, trackEvent } from '../lib/analytics';
 import { writeUpgradeIntent } from '../lib/upgrade-intent';
-import { STORAGE_KEYS } from '../lib/validation';
-import { DepthAssessmentResult, isDepthAssessmentResult } from '../utils/depthScoring';
+import { isDepthAssessmentResult } from '../utils/depthScoring';
 
-const SAMPLE_FUNCTIONS = [
-  { code: 'Ti', name: 'Introverted Thinking', score: 88, note: 'tests ideas for clean internal structure' },
-  { code: 'Ne', name: 'Extraverted Intuition', score: 74, note: 'opens alternatives and edge cases quickly' },
-  { code: 'Si', name: 'Introverted Sensation', score: 57, note: 'checks whether a pattern has held up before' },
-  { code: 'Fe', name: 'Extraverted Feeling', score: 34, note: 'becomes loudest when approval, belonging, or tone feels unsafe' },
-];
-
-const INSIGHT_SECTIONS = [
+const excerpts = [
   {
-    icon: Compass,
-    eyebrow: 'Insight report',
-    title: 'Developmental edge',
-    body:
-      'This INTP sample suggests a person who trusts precise internal structure first, then reaches for shared feeling and social repair only when pressure rises. The report names where inferior Fe can become useful practice instead of embarrassment or self-criticism.',
-    bullets: [
-      'Notice when precision becomes a shield against being affected.',
-      'Name one value or relational need before explaining the whole model.',
-      'Treat the inferior function as a training edge, not a flaw.',
+    id: 'strength',
+    number: '01',
+    title: 'The strength you reach for first',
+    category: 'Function dynamics',
+    paragraphs: [
+      'You may feel most at ease when you can take an idea apart and understand how its pieces fit. In this example, introverted thinking (Ti) leads the pattern: an explanation earns your trust when it holds together, even if it comes from an unexpected person.',
+      'That preference can give you patience for difficult problems and an eye for contradictions. It can also make it easy to stay in analysis after you have enough information to act. Notice the difference between a question that brings new clarity and one that postpones a decision you already understand.',
     ],
+    practice:
+      'Pick a decision you have been revisiting. Write down what you know, what is still uncertain, and the smallest step you could take without settling every question.',
   },
   {
-    icon: Target,
-    eyebrow: 'Insight report',
-    title: 'Stress pattern map',
-    body:
-      'Under load, the fictional INTP profile may move from calm analysis into sudden sensitivity to tone, approval, exclusion, or being misunderstood. The paid report turns that pattern into concrete signals to watch.',
-    bullets: [
-      'Early signal: rehearsing the perfect explanation before naming the feeling.',
-      'Mid signal: reading neutral feedback as rejection or social judgment.',
-      'Repair signal: ask one direct relational question before withdrawing.',
+    id: 'stress',
+    number: '02',
+    title: 'When clarity becomes distance',
+    category: 'Stress and recovery',
+    paragraphs: [
+      'Imagine a colleague says your feedback sounded dismissive. Your first response might be to explain why the feedback was technically correct. As the conversation becomes more tense, you find yourself rehearsing a better argument while becoming increasingly concerned about what the colleague thinks of you.',
+      'A Ti–Fe interpretation invites you to notice that shift: precision is still important, but the conversation may now need reassurance. More explanation can leave both people feeling unheard. This is a possibility to observe, not a prediction that every stressful conversation will follow the same sequence.',
     ],
+    practice:
+      'Pause before defending the conclusion. Try: “I want to understand how that landed. Which part felt dismissive?” Listen for the impact before returning to your reasoning.',
   },
   {
-    icon: Heart,
-    eyebrow: 'Insight report',
-    title: 'Relationship-pattern reflection',
-    body:
-      'The sample explains how the Ti-Fe axis can show up in conflict: wanting clean distinctions while also feeling exposed when the room asks for warmth, reassurance, or faster emotional response.',
-    bullets: [
-      'Translate the thought into one human-facing sentence.',
-      'Separate a real objection from a tone-based threat response.',
-      'Ask what repair is needed before defending the conclusion.',
+    id: 'relationships',
+    number: '03',
+    title: 'Let people see the care behind the thought',
+    category: 'Relationships',
+    paragraphs: [
+      'You might show care by solving a problem, making an explanation clearer, or noticing something another person overlooked. The other person may be looking for a different sign of care: a moment of listening, an acknowledgment, or an invitation to say more.',
+      'Neither response tells the whole story about your relationship. The useful question is whether your intention is reaching the other person. The feeling side of this sample pattern offers a practice in making that intention explicit, without having to abandon the careful thinking you value.',
     ],
+    practice:
+      'In your next difficult conversation, ask: “Would it help more if I listened, or if we worked through possible solutions?” Check what they actually need.',
   },
   {
-    icon: FileText,
-    eyebrow: 'Insight report',
-    title: 'Practice plan',
-    body:
-      'The report closes with a small practice sequence. For this fictional INTP map, the first step is not a full personality overhaul. It is a repeatable way to keep thought precise while letting feeling stay in the room.',
-    bullets: [
-      'Write one claim, one piece of evidence, and one limitation.',
-      'Name one value or impact before continuing the analysis.',
-      'Make one repair attempt while the conversation is still workable.',
+    id: 'practice',
+    number: '04',
+    title: 'A small experiment for the coming week',
+    category: 'Growth practices',
+    paragraphs: [
+      'Choose one ordinary situation where you tend to stay in your head: giving feedback, asking for help, or responding to disagreement. Keep the experiment small enough that you can try it more than once.',
+      'Afterward, write three short notes: what happened, what you assumed, and what you could ask next time. Look for examples that challenge the interpretation as well as examples that fit. A useful map should help you observe more clearly; it should not become a reason to explain away every experience with your type.',
     ],
+    practice:
+      'At the end of the week, keep one thing that helped and drop one assumption that did not fit. Your observations matter more than making the report sound right.',
   },
 ];
-
-const COACH_MESSAGES = [
-  {
-    speaker: 'You',
-    text: 'I get cold or overly explanatory when someone says I sound dismissive. What should I practice?',
-  },
-  {
-    speaker: 'AI Type Guide',
-    text:
-      'Start with a bridge sentence: "I am trying to be precise, not dismissive. What part landed badly?" That keeps Ti online while giving Fe a direct repair channel.',
-  },
-  {
-    speaker: 'AI Type Guide',
-    text:
-      'For the next week, pick one conversation per day where you answer with one distinction, one value, and one question about the other person\'s experience.',
-  },
-];
-
-const CTA_LOCATION = 'sample_report';
-const INSIGHT_PRICE = discountedPriceLabel(PRICING.insight.amount);
-const MASTERY_PRICE = discountedPriceLabel(PRICING.mastery.amount);
-
-const readSavedDepthResult = (): DepthAssessmentResult | null => {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.RESULTS) || 'null');
-    return isDepthAssessmentResult(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-};
 
 export const SampleReport: React.FC = () => {
   const navigate = useNavigate();
-  const [savedResult] = useState(readSavedDepthResult);
-
-  useSEO(PAGE_SEO.sampleReport);
-
-  const resultContext = useMemo(() => {
-    if (!savedResult) return null;
-
-    const inferiorPosition = savedResult.hierarchy.find((item) => item.position === 'inferior');
-    return {
-      dominantLabel: `${ATTITUDE_LABELS[savedResult.attitude.dominant]} ${FUNCTION_LABELS[savedResult.dominant]}`,
-      inferiorLabel: `${ATTITUDE_LABELS[inferiorPosition?.attitude ?? 'extraverted']} ${FUNCTION_LABELS[savedResult.inferior]}`,
-      reliabilityLabel: savedResult.reliability.label,
-    };
-  }, [savedResult]);
-
-  useEffect(() => {
-    if (!savedResult || !resultContext) return;
-
-    const viewedKey = `typejung_sample_report_result_context_${savedResult.completedAt}`;
+  const [hasResults] = useState(() => {
     try {
-      if (sessionStorage.getItem(viewedKey)) return;
-      sessionStorage.setItem(viewedKey, 'true');
+      return isDepthAssessmentResult(
+        JSON.parse(
+          localStorage.getItem('jungian_assessment_results') || 'null',
+        ),
+      );
     } catch {
-      // If sessionStorage is unavailable, still track the visible context.
+      return false;
     }
-
-    trackEvent('sample_report_result_context_viewed', {
-      source: 'sample_report',
-      dominant_channel: savedResult.dominant,
-      inferior_channel: savedResult.inferior,
-      reliability: resultContext.reliabilityLabel,
+  });
+  const price = discountedPriceLabel(PRICING.insight.amount);
+  useSEO(PAGE_SEO.sampleReport);
+  useEffect(() => {
+    trackEvent('sample_report_viewed', {
+      has_local_results: hasResults,
+      version: '2026_09_clarity',
     });
-  }, [resultContext, savedResult]);
-
-  const startAssessment = (location: string) => {
-    const destination = pathWithSource('/assessment', location);
-    AnalyticsEvents.ctaClicked('start_assessment', location, {
-      buttonText: 'Start free assessment',
+  }, [hasResults]);
+  const continueToReport = () => {
+    const source = 'sample_report';
+    writeUpgradeIntent('insight', source);
+    const destination = pathWithSource(
+      hasResults ? '/checkout/insight' : '/assessment',
+      source,
+      { tier: 'insight' },
+    );
+    AnalyticsEvents.ctaClicked('get_insight_report', source, {
       destination,
+      tier: 'insight',
     });
-    navigate(destination);
-  };
-
-  const getPaidReport = (tier: PaidTierId, location: string) => {
-    const hasResults = typeof window !== 'undefined' && Boolean(localStorage.getItem(STORAGE_KEYS.RESULTS));
-    const price = tier === 'insight' ? INSIGHT_PRICE : MASTERY_PRICE;
-    const destination = hasResults
-      ? pathWithSource(`/checkout/${tier}`, location, { result_context: 'local_result' })
-      : pathWithSource('/assessment', location, { tier });
-
-    AnalyticsEvents.ctaClicked(`get_${tier}_report`, location, {
-      buttonText: `Get my ${PRICING[tier].name} report - ${price}`,
-      destination,
-      tier,
-    });
-
     if (hasResults) {
-      AnalyticsEvents.upgradeClicked(location, tier);
-      trackEvent('sample_report_checkout_clicked', {
-        tier,
-        source: location,
-        result_context: 'local_result',
-        dominant_channel: savedResult?.dominant || 'unknown',
-        inferior_channel: savedResult?.inferior || 'unknown',
-        reliability: savedResult?.reliability.label || 'unknown',
-      });
-      navigate(destination);
-      return;
+      AnalyticsEvents.upgradeClicked(source, 'insight');
+      trackEvent('sample_report_checkout_clicked', { tier: 'insight', source });
     }
-
-    writeUpgradeIntent(tier, location);
     navigate(destination);
   };
-
-  const getInsightReport = (location: string) => {
-    getPaidReport('insight', location);
-  };
-
-  const getMasteryReport = (location: string) => {
-    getPaidReport('mastery', location);
-  };
-
-  const getContextInsightReport = () => {
-    const destination = pathWithSource('/checkout/insight', 'sample_report_result_context', {
-      result_context: 'local_result',
-    });
-
-    AnalyticsEvents.upgradeClicked('sample_report_result_context', 'insight');
-    AnalyticsEvents.ctaClicked('get_context_insight_report', 'sample_report_result_context', {
-      buttonText: `Get Insight for my map - ${INSIGHT_PRICE}`,
-      destination,
-      tier: 'insight',
-    });
-    trackEvent('sample_report_context_checkout_clicked', {
-      tier: 'insight',
-      dominant_channel: savedResult?.dominant || 'unknown',
-      inferior_channel: savedResult?.inferior || 'unknown',
-      reliability: savedResult?.reliability.label || 'unknown',
-    });
-
-    navigate(destination);
-  };
-
-  const getContextMasteryReport = () => {
-    const destination = pathWithSource('/checkout/mastery', 'sample_report_result_context', {
-      result_context: 'local_result',
-    });
-
-    AnalyticsEvents.upgradeClicked('sample_report_result_context', 'mastery');
-    AnalyticsEvents.ctaClicked('get_context_mastery_report', 'sample_report_result_context', {
-      buttonText: `Get Mastery for my map - ${MASTERY_PRICE}`,
-      destination,
-      tier: 'mastery',
-    });
-    trackEvent('sample_report_context_checkout_clicked', {
-      tier: 'mastery',
-      dominant_channel: savedResult?.dominant || 'unknown',
-      inferior_channel: savedResult?.inferior || 'unknown',
-      reliability: savedResult?.reliability.label || 'unknown',
-    });
-    navigate(destination);
-  };
-
   return (
-    <div className="min-h-screen bg-jung-base pb-28 md:pb-0">
-      <section className="section-rule py-10 lg:py-16">
-        <div className="editorial-container grid gap-10 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)] lg:items-end">
-          <div>
-            <p className="text-label">Sample report</p>
-            <h1 className="mt-4 text-display text-5xl text-jung-dark sm:text-6xl">
-              Preview the paid depth before you buy.
-            </h1>
-            <p className="mt-5 text-body-lg text-jung-secondary">
-              This fictional INTP sample shows how TypeJung turns a function-stack map into stress-pattern reflection, relationship-pattern reflection, practices, and follow-up prompts.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button
-                variant="accent"
-                size="lg"
-                onClick={() => getInsightReport('sample_report_hero')}
-                rightIcon={<ArrowRight className="h-5 w-5" />}
-              >
-                Get my Insight report - {INSIGHT_PRICE}
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={() => startAssessment('sample_report_hero')}
-                rightIcon={<ArrowRight className="h-5 w-5" />}
-              >
-                Start free assessment
-              </Button>
-            </div>
-            <p className="mt-3 text-xs leading-5 text-jung-muted">
-              No result yet? Insight stays selected while you complete the free map first.
-            </p>
-            {resultContext && (
-              <div className="mt-6 rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 p-5 shadow-sm">
-                <div className="inline-flex items-center gap-2 rounded-lg bg-jung-surface px-3 py-1.5 text-xs font-semibold text-jung-accent">
-                  <Check className="h-3.5 w-3.5" />
-                  Your free map is ready
-                </div>
-                <h2 className="mt-4 text-2xl font-semibold leading-tight text-jung-dark">
-                  Use the sample to decide on your {resultContext.dominantLabel} to {resultContext.inferiorLabel} report.
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-jung-secondary">
-                  The sample shows the format. Your paid report would apply that depth to the axis from your own free map.
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-jung-border bg-jung-surface p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-jung-muted">Dominant</p>
-                    <p className="mt-1 text-sm font-semibold text-jung-dark">{resultContext.dominantLabel}</p>
-                  </div>
-                  <div className="rounded-lg border border-jung-border bg-jung-surface p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-jung-muted">Growth edge</p>
-                    <p className="mt-1 text-sm font-semibold text-jung-dark">{resultContext.inferiorLabel}</p>
-                  </div>
-                </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <Button
-                    variant="accent"
-                    size="sm"
-                    onClick={getContextInsightReport}
-                    rightIcon={<ArrowRight className="h-4 w-4" />}
-                  >
-                    Get Insight - {INSIGHT_PRICE}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={getContextMasteryReport}
-                  >
-                    Get Mastery - {MASTERY_PRICE}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border border-jung-border bg-jung-base p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-jung-muted">Insight</p>
-                <p className="mt-2 text-2xl font-semibold text-jung-dark">{discountedPriceLabel(PRICING.insight.amount)}</p>
-                <p className="mt-1 text-xs leading-5 text-jung-secondary">
-                  <span className="line-through">{PRICING.insight.price}</span> before {EMAIL_CAPTURE_OFFER.code}. Depth report, stress-pattern map, relationship-pattern reflection, practices, plus the 15-page Function Stack in Depth guide (PDF).
-                </p>
-              </div>
-              <div className="rounded-lg border border-jung-border bg-jung-base p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-jung-muted">Mastery</p>
-                <p className="mt-2 text-2xl font-semibold text-jung-dark">{discountedPriceLabel(PRICING.mastery.amount)}</p>
-                <p className="mt-1 text-xs leading-5 text-jung-secondary">
-                  <span className="line-through">{PRICING.mastery.price}</span> before {EMAIL_CAPTURE_OFFER.code}. Insight plus AI guide and practice tools.
-                </p>
-              </div>
-            </div>
-            <Link
-              to="/debrief"
-              onClick={() => trackEvent('debrief_cta_clicked', { source: 'sample_report_debrief' })}
-              className="flex items-center justify-between gap-3 rounded-lg border border-jung-border bg-jung-base p-4 transition hover:border-jung-accent-muted"
+    <div className="lab-container py-10 sm:py-16">
+      <header className="mx-auto max-w-3xl">
+        <p className="journey-eyebrow">Inside an Insight report</p>
+        <h1 className="mt-4 font-display text-4xl leading-tight sm:text-6xl">
+          A map becomes useful
+          <br />
+          <span className="font-normal italic text-jung-accent">
+            when you can live with it.
+          </span>
+        </h1>
+        <p className="mt-5 max-w-2xl text-base leading-7 text-jung-secondary">
+          Read four illustrative excerpts below. Your paid report contains ten
+          AI-generated sections based on your own assessment result.
+        </p>
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-y border-jung-border py-4">
+          <span className="font-display text-xl text-jung-accent">
+            Ti · Ne · Si · Fe
+          </span>
+          <span className="text-xs text-jung-muted">
+            Fictional example · Not your personal result
+          </span>
+        </div>
+      </header>
+      <div className="mx-auto mt-10 grid max-w-5xl items-start gap-10 lg:grid-cols-[12rem_1fr] lg:gap-16">
+        <nav
+          aria-label="Sample report contents"
+          className="rounded-xl bg-jung-surface-alt p-5 lg:sticky lg:top-28"
+        >
+          <p className="journey-eyebrow">In this sample</p>
+          <ol className="mt-3">
+            {excerpts.map((section) => (
+              <li key={section.id}>
+                <a
+                  href={`#sample-${section.id}`}
+                  className="flex min-h-11 items-center gap-3 text-xs leading-5 text-jung-secondary hover:text-jung-accent"
+                >
+                  <span className="font-mono text-jung-gold">
+                    {section.number}
+                  </span>
+                  {section.category}
+                </a>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-4 border-t border-jung-border pt-4 text-xs leading-6 text-jung-muted">
+            Educational self-reflection. This is a format example, not a
+            diagnosis or a customer testimonial.
+          </p>
+        </nav>
+        <div>
+          {excerpts.map((section) => (
+            <article
+              key={section.id}
+              id={`sample-${section.id}`}
+              className="mb-12 scroll-mt-28 border-b border-jung-border pb-12"
             >
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-jung-muted">Personal Type Debrief</p>
-                <p className="mt-1 text-xs leading-5 text-jung-secondary">
-                  Prefer a human read? Founder-reviewed breakdown within {DEBRIEF_OFFER.deliveryHours}h — {DEBRIEF_OFFER.price}.
-                </p>
-              </div>
-              <ArrowRight className="h-4 w-4 flex-none text-jung-accent" />
-            </Link>
-            <div className="rounded-lg border border-jung-accent-muted bg-jung-accent-light/70 p-4 shadow-sm">
-              <DiscountCaptureCard
-                source="sample_report_email_code"
-                compact
-                minimal
-                minimalTitle="Email yourself the sample path"
-                minimalDescription={`Keep the ${EMAIL_CAPTURE_OFFER.code} code and a link back to the free assessment. Use it only if your own map makes Insight worth unlocking.`}
-                minimalSubmitLabel="Email code"
-                minimalFootnote="One email with the code and next step. No subscription, no spam."
-                minimalSentMessage="Code sent. The email brings you back through the free assessment with Insight ready."
-                preferredTier="insight"
-                showCheckoutButtons={false}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="editorial-container py-10 lg:py-14">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1fr)] lg:items-start">
-          <div>
-            <p className="text-label">Fictional result context</p>
-            <h2 className="mt-3 text-heading text-4xl text-jung-dark">The report starts from the map you already saw.</h2>
-            <p className="mt-4 text-sm leading-7 text-jung-secondary">
-              In this sample, the free map points to a strong Ti-Ne pattern with Fe pressure. The paid report does not replace the map. It explains what the map may mean in daily life.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {SAMPLE_FUNCTIONS.map((item) => (
-              <div key={item.code} className="rounded-lg border border-jung-border bg-jung-surface p-4">
-                <div className="flex flex-wrap items-baseline justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-jung-dark">
-                      {item.code} - {item.name}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-jung-muted">{item.note}</p>
-                  </div>
-                  <p className="text-sm font-semibold text-jung-accent">{item.score}/100</p>
-                </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-jung-surface-alt">
-                  <div className="h-full rounded-full bg-jung-accent" style={{ width: `${item.score}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-jung-border bg-jung-surface py-10 lg:py-14">
-        <div className="editorial-container">
-          <div className="max-w-2xl">
-            <p className="text-label">Inside Insight</p>
-            <h2 className="mt-3 text-heading text-4xl text-jung-dark">A deeper read, written for practical use.</h2>
-            <p className="mt-4 text-sm leading-7 text-jung-secondary">
-              Insight is meant to answer the question behind the scores: what pattern is this pointing at, where does it tighten, and what should I try next?
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {INSIGHT_SECTIONS.map(({ icon: Icon, eyebrow, title, body, bullets }) => (
-              <article key={title} className="rounded-lg border border-jung-border bg-jung-base p-5 sm:p-6">
-                <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-jung-accent">
-                  <Icon className="h-4 w-4" />
-                  {eyebrow}
-                </div>
-                <h3 className="mt-4 text-2xl font-semibold text-jung-dark">{title}</h3>
-                <p className="mt-3 text-sm leading-7 text-jung-secondary">{body}</p>
-                <ul className="mt-5 grid gap-3">
-                  {bullets.map((bullet) => (
-                    <li key={bullet} className="flex gap-3 text-sm leading-6 text-jung-secondary">
-                      <Check className="mt-0.5 h-4 w-4 flex-none text-jung-accent" />
-                      <span>{bullet}</span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-8 flex flex-col gap-3 rounded-lg border border-jung-border bg-jung-base p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-jung-dark">Want this style of report for your own result?</p>
-              <p className="mt-1 text-xs leading-5 text-jung-secondary">
-                Insight is {INSIGHT_PRICE} with {EMAIL_CAPTURE_OFFER.code} applied on Stripe.
+              <p className="journey-eyebrow">
+                {section.number} / {section.category}
               </p>
-            </div>
-            <Button
-              variant="accent"
-              size="md"
-              onClick={() => getInsightReport('sample_report_insight_section')}
-              rightIcon={<ArrowRight className="h-4 w-4" />}
-            >
-              Get Insight - {INSIGHT_PRICE}
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="editorial-container py-10 lg:py-14">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.76fr)_minmax(0,1fr)] lg:items-start">
-          <div>
-            <p className="text-label">Mastery sample</p>
-            <h2 className="mt-3 text-heading text-4xl text-jung-dark">Mastery adds a guide loop after the report.</h2>
-            <p className="mt-4 text-sm leading-7 text-jung-secondary">
-              Mastery is for people who want to keep working with the result after reading it. The AI Type Guide uses the result context to suggest reflection prompts and practice next steps.
-            </p>
-            <div className="mt-6 grid gap-3">
-              {[
-                'Ask follow-up questions about your mapped pattern.',
-                'Turn report language into a weekly practice plan.',
-                'Revisit the result when a stress pattern shows up again.',
-              ].map((item) => (
-                <div key={item} className="flex gap-3 text-sm leading-6 text-jung-secondary">
-                  <Sparkles className="mt-0.5 h-4 w-4 flex-none text-jung-accent" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            <div className="inline-flex items-center gap-2 rounded-lg bg-jung-accent-light px-3 py-2 text-sm font-semibold text-jung-accent">
-              <Brain className="h-4 w-4" />
-              AI Type Guide sample
-            </div>
-            {COACH_MESSAGES.map((message) => (
-              <div
-                key={message.text}
-                className={`rounded-lg border p-4 shadow-sm ${
-                  message.speaker === 'You'
-                    ? 'border-jung-border bg-jung-surface'
-                    : 'border-jung-accent-muted bg-jung-accent-light/70'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-jung-muted">
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  {message.speaker}
-                </div>
-                <p className="mt-3 text-sm leading-6 text-jung-secondary">{message.text}</p>
+              <h2 className="mt-3 font-display text-3xl leading-tight sm:text-4xl">
+                {section.title}
+              </h2>
+              <div className="mt-5 space-y-4">
+                {section.paragraphs.map((paragraph) => (
+                  <p
+                    key={paragraph}
+                    className="text-base leading-8 text-jung-secondary"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-jung-dark py-12 lg:py-16">
-        <div className="editorial-container grid gap-8 text-white lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-          <div>
-            <p className="text-sm font-semibold text-white/60">Ready to see your own map?</p>
-            <h2 className="mt-3 text-heading text-4xl text-white">Start free, then decide from your actual result.</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/70">
-              Insight and Mastery unlock after you can see whether the free assessment feels useful. No card is needed for the free map.
+              <div className="mt-6 rounded-xl border-l-2 border-jung-accent bg-jung-accent-light p-5">
+                <h3 className="text-xs font-semibold text-jung-accent">
+                  Try this
+                </h3>
+                <p className="mt-2 text-sm leading-7 text-jung-secondary">
+                  {section.practice}
+                </p>
+              </div>
+            </article>
+          ))}
+          <section className="rounded-2xl bg-jung-accent p-6 text-white sm:p-8">
+            <FileText className="h-5 w-5 text-white/70" />
+            <h2 className="mt-4 font-display text-3xl">
+              What could your map help you notice?
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/80">
+              Insight includes ten sections: overview, function dynamics,
+              archetypes, stress, relationships, work, individuation, shadow,
+              growth, and dream reflection. The Function Stack in Depth PDF
+              guide is also included.
             </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
             <Button
               variant="inverted"
-              size="lg"
-              onClick={() => getInsightReport(`${CTA_LOCATION}_final`)}
-              rightIcon={<ArrowRight className="h-5 w-5" />}
-            >
-              Get Insight - {INSIGHT_PRICE}
-            </Button>
-            <Button
-              variant="accent"
-              size="lg"
-              onClick={() => getMasteryReport(`${CTA_LOCATION}_final`)}
-              rightIcon={<ArrowRight className="h-5 w-5" />}
-            >
-              Get Mastery - {MASTERY_PRICE}
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="editorial-container py-8">
-        <p className="text-xs leading-5 text-jung-muted">
-          TypeJung is for reflection and self-understanding, not medical, therapeutic, hiring, or diagnostic decision-making. See the{' '}
-          <Link className="inline-block -my-3.5 py-3.5 font-semibold text-jung-accent hover:text-jung-accent-hover" to="/terms">
-            Terms
-          </Link>{' '}
-          and{' '}
-          <Link className="inline-block -my-3.5 py-3.5 font-semibold text-jung-accent hover:text-jung-accent-hover" to="/privacy">
-            Privacy Policy
-          </Link>
-          .
-        </p>
-      </section>
-
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-jung-border bg-jung-surface/95 shadow-[0_-12px_32px_rgba(41,28,18,0.14)] backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-screen-sm gap-2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-jung-dark">
-                {savedResult ? `Unlock your ${FUNCTION_LABELS[savedResult.inferior].toLowerCase()} edge - ${INSIGHT_PRICE}` : `Free map first - Insight is ${INSIGHT_PRICE}`}
-              </p>
-              <p className="mt-0.5 text-xs leading-4 text-jung-muted">
-                {savedResult ? 'Your map is ready. 7-day guarantee.' : 'See your result before checkout. No subscription.'}
-              </p>
-            </div>
-            <Button
-              variant="accent"
-              size="sm"
-              className="flex-none"
-              onClick={() => (savedResult ? getInsightReport('sample_report_mobile_sticky') : startAssessment('sample_report_mobile_sticky'))}
+              className="mt-6"
+              onClick={continueToReport}
               rightIcon={<ArrowRight className="h-4 w-4" />}
             >
-              {savedResult ? 'Unlock' : 'Start free'}
+              {hasResults
+                ? `Get my Insight report — ${price}`
+                : 'Start with my free map'}
             </Button>
-          </div>
-          <div className="flex min-w-0 flex-wrap gap-1.5">
-            {(savedResult ? ['Your map', 'Edge', 'Practice'] : ['Free result', 'Sample first', 'No card']).map((item) => (
-              <span key={item} className="inline-flex min-h-7 items-center gap-1 rounded-lg border border-jung-border bg-jung-base px-2 text-[11px] font-semibold text-jung-muted">
-                <Check className="h-3 w-3 text-jung-accent" />
-                {item}
-              </span>
-            ))}
-          </div>
+            <p className="mt-4 text-xs leading-6 text-white/70">
+              {price} once · CAD · No subscription · 7-day refund policy
+            </p>
+          </section>
+          <Link
+            to={hasResults ? '/results' : '/pricing'}
+            className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-jung-accent underline underline-offset-4"
+          >
+            {hasResults
+              ? 'Return to my free result'
+              : 'Compare pricing options'}
+          </Link>
         </div>
       </div>
     </div>
