@@ -5,6 +5,7 @@ import { findCompletedPurchaseForUser, isCheckoutSessionRedeemableBy, resolveTie
 import { enforceRateLimit } from '../_lib/rate-limit.js';
 import { getSupabaseAdminClient, hasSupabaseAdminConfig } from '../_lib/supabase.js';
 import { getStripeSecretKey } from '../../server/checkout.js';
+import { PREMIUM_REPORT_KEYS, readCompletePremiumReport } from '../../lib/premium-report.js';
 
 interface FunctionScore {
   function: string;
@@ -43,21 +44,6 @@ const FUNCTION_NAMES: Record<string, string> = {
   Ne: 'Extraverted Intuition',
   Ni: 'Introverted Intuition',
 };
-
-const SECTION_KEYS = [
-  'overview',
-  'functionAnalysis',
-  'archetypes',
-  'theGrip',
-  'relationships',
-  'career',
-  'individuation',
-  'shadow',
-  'growth',
-  'dreams',
-] as const;
-
-type SectionKey = typeof SECTION_KEYS[number];
 
 const CHANNEL_NAMES: Record<string, string> = {
   thinking: 'Thinking',
@@ -183,28 +169,6 @@ async function verifyPaidCheckoutSession(sessionId: unknown): Promise<boolean> {
   return Boolean(resolveTierFromCheckoutSession(session));
 }
 
-function fallbackPremiumAnalysis(input: AnalysisInput): Record<SectionKey, string> {
-  const free = fallbackFreeAnalysis(input);
-  const depth = getDepth(input);
-  const dominant = depth?.dominant ? CHANNEL_NAMES[depth.dominant] || depth.dominant : FUNCTION_NAMES[input.stack.dominant.function] || input.stack.dominant.function;
-  const inferior = depth?.inferior ? CHANNEL_NAMES[depth.inferior] || depth.inferior : FUNCTION_NAMES[input.stack.inferior.function] || input.stack.inferior.function;
-  const edge = depth?.narrative?.developmentalEdge || `Developing ${inferior} without abandoning ${dominant}.`;
-  const practice = depth?.narrative?.practice || 'Use one small embodied practice each day, then reassess after the pattern has had time to shift.';
-
-  return {
-    overview: free,
-    functionAnalysis: `Your hierarchy shows ${dominant} carrying the most conscious energy while ${inferior} holds the least differentiated material. Read the stack as a tension map rather than a rank of traits. The dominant channel gives competence and identity; the auxiliary supports it; the tertiary is available but uneven; the inferior asks for slow development.`,
-    archetypes: `The dominant function often behaves like the heroic stance of the ego: it is the mode you trust first. The inferior carries the counter-image. It can appear through projection, attraction, embarrassment, or sudden intensity. Development means learning to relate to that material without letting it overthrow the whole system.`,
-    theGrip: `Under pressure, ${inferior} may stop being subtle and become absolute. You may overreact to signals that normally seem minor, then try to regain control through ${dominant}. Recovery starts with slowing the body, naming the trigger, and choosing one grounded action before interpreting the whole situation.`,
-    relationships: `Relationship-pattern reflection is useful here because the inferior function can become easier to notice around other people. Notice where attraction, irritation, or shame has more charge than the situation deserves. Treat that charge as self-observation material about the undeveloped channel, not proof that a relationship needs a forced conclusion.`,
-    career: `For work-pattern reflection, notice where ${dominant} has real room to operate and where the environment repeatedly asks you to develop ${inferior}. Use this as a prompt for observing energy, feedback, pacing, embodiment, and values; do not treat it as career counseling or a directive about which role to choose.`,
-    individuation: edge,
-    shadow: `The shadow pattern is most likely to gather around ${inferior}. You may reject this function in yourself, then meet it outside as fascination or contempt. The task is not to become the opposite of yourself. The task is to make enough room for the weak channel that it no longer needs to erupt.`,
-    growth: practice,
-    dreams: `Dreams may show the inferior function indirectly: unfamiliar places, charged figures, body states, conflict scenes, or images that carry the missing attitude. Record the feeling tone first, then ask what part of the psyche is asking for attention rather than trying to decode the image too quickly.`,
-  };
-}
-
 async function handleFreeAnalysis(req: VercelRequest, res: VercelResponse) {
   const { scores, stack, attitudeScore, isUndifferentiated, resultVersion, depthResult } = req.body as AnalysisInput;
 
@@ -225,6 +189,7 @@ Keep the tone direct, psychologically grounded, and useful. Use second person ("
 
   const fallbackInput = { scores, stack, attitudeScore, isUndifferentiated, resultVersion, depthResult };
   let analysis = fallbackFreeAnalysis(fallbackInput);
+  let generationSource: 'gemini' | 'template' = 'template';
 
   try {
     const generated = await generateGeminiText(prompt, {
@@ -234,6 +199,7 @@ Keep the tone direct, psychologically grounded, and useful. Use second person ("
 
     if (isUsableFreeAnalysis(generated)) {
       analysis = generated.trim();
+      generationSource = 'gemini';
     } else {
       console.error('Using fallback free analysis: generated response was incomplete');
     }
@@ -241,7 +207,7 @@ Keep the tone direct, psychologically grounded, and useful. Use second person ("
     console.error('Using fallback free analysis:', error?.message || error);
   }
 
-  return res.status(200).json({ analysis });
+  return res.status(200).json({ analysis, generationSource });
 }
 
 async function handlePremiumAnalysis(req: VercelRequest, res: VercelResponse) {
@@ -283,7 +249,7 @@ async function handlePremiumAnalysis(req: VercelRequest, res: VercelResponse) {
   const prompt = `Write as an educational Jungian typology guide. Create a premium TypeJung self-reflection report from this result.
 
 Return valid JSON only with these exact string keys:
-${SECTION_KEYS.join(', ')}
+${PREMIUM_REPORT_KEYS.join(', ')}
 
 Each value should be 120-180 words, direct, psychologically grounded, and second-person. Frame interpretations as possibilities for reflection, not clinical findings. Do not diagnose, provide therapy, or claim scientific validation.
 
@@ -296,22 +262,25 @@ ${JSON.stringify(depthResult || stack.depthResult || null, null, 2)}
 
   const text = await generateGeminiText(prompt, {
     temperature: 0.65,
-    maxOutputTokens: 3600,
+    maxOutputTokens: 8192,
     responseMimeType: 'application/json',
   }).catch((error) => {
-    console.error('Using fallback premium analysis:', error?.message || error);
+    console.error('Premium report generation unavailable:', error?.message || error);
     return '';
   });
 
-  const parsed = extractJson(text);
-  const fallback = fallbackPremiumAnalysis({ scores, stack, attitudeScore, isUndifferentiated, depthResult });
+  const analysis = readCompletePremiumReport(extractJson(text));
+  if (!analysis) {
+    console.error('Premium report delivery failed: a complete ten-section report was not generated');
+    res.setHeader('Retry-After', '60');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(503).json({
+      code: 'report_temporarily_unavailable',
+      error: 'Your personalized report could not be completed. Your purchase is saved. Please try again later, or contact support for help or a refund.',
+    });
+  }
 
-  const analysis = SECTION_KEYS.reduce((acc, key) => {
-    acc[key] = typeof parsed?.[key] === 'string' ? parsed[key] : fallback[key];
-    return acc;
-  }, {} as Record<SectionKey, string>);
-
-  return res.status(200).json({ analysis });
+  return res.status(200).json({ analysis, generationSource: 'gemini' });
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

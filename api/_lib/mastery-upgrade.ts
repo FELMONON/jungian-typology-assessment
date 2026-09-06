@@ -7,6 +7,7 @@ import {
 } from '../../server/checkout.js';
 import { PRICING } from '../../data/pricing.js';
 import { discountedAmount, formatCadAmount } from '../../data/discount.js';
+import { guardPaidReportCheckout } from './report-availability.js';
 
 const CHECKOUT_SESSION_EXPIRATION_SECONDS = 24 * 60 * 60;
 
@@ -48,6 +49,8 @@ export async function createMasteryUpgradeSession(req: VercelRequest, res: Verce
     if (!stripeSecretKey) {
       return res.status(500).json({ error: 'Stripe not configured' });
     }
+
+    if (!await guardPaidReportCheckout(res)) return;
 
     const customerEmail = cleanEmail(req.body?.email ?? req.body?.customerEmail);
     const source = cleanToken(req.body?.source) || 'success_upsell';

@@ -7,6 +7,7 @@ import {
   recordCheckoutIntentStarted,
 } from './_lib/checkout-intents.js';
 import { recordFunnelEvent } from './_lib/funnel-events.js';
+import { guardPaidReportCheckout } from './_lib/report-availability.js';
 import { enforceRateLimit } from './_lib/rate-limit.js';
 import { getSupabaseAdminClient, hasSupabaseAdminConfig } from './_lib/supabase.js';
 import { cleanPromotionCode, getAutoPromotionCode, getStripePaymentMethodConfigurationId, getStripeSecretKey, parsePaidTier, resolveCheckoutBaseUrl } from '../server/checkout.js';
@@ -304,6 +305,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!resolvedTier) {
       return res.status(400).json({ error: 'Invalid tier' });
     }
+
+    if (!await guardPaidReportCheckout(res)) return;
 
     const baseUrl = resolveCheckoutBaseUrl(req.headers.origin, req.headers.host);
     const customerEmail = await getCheckoutCustomerEmail(req);

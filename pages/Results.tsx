@@ -9,6 +9,7 @@ import { ATTITUDE_LABELS, AttitudeDirection, FUNCTION_LABELS, FunctionChannel, d
 import { discountedPriceLabel, EMAIL_CAPTURE_OFFER } from '../data/discount';
 import { readAssessmentIntent, INTENT_RESULT_FRAMING } from '../lib/assessment-intent';
 import { PRICING, type PaidTierId } from '../data/pricing';
+import { SUPPORT_EMAIL } from '../data/support';
 import { useAiAnalysis, type AnalysisInput, type PremiumAnalysis } from '../hooks/use-ai-analysis';
 import { useAuth } from '../hooks/use-auth';
 import { usePremiumStatus } from '../hooks/use-premium-status';
@@ -1599,8 +1600,23 @@ export const Results: React.FC = () => {
             )}
 
             {!isLoadingPremium && premiumError && (
-              <div className="rounded-lg border border-error/30 bg-jung-base p-4 text-sm leading-6 text-error">
-                Premium report unavailable: {premiumError}
+              <div role="alert" className="rounded-lg border border-jung-border bg-jung-base p-5 text-sm leading-6 text-jung-secondary">
+                <h3 className="text-base font-semibold text-jung-dark">Your report could not be completed yet</h3>
+                <p className="mt-2">{premiumError}</p>
+                <p className="mt-2">You do not need to buy again or retake the assessment. Your free map and Type Depth Guide are still available.</p>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="accent"
+                    disabled={!premiumAnalysisInput}
+                    onClick={() => premiumAnalysisInput && fetchPremiumAnalysis(premiumAnalysisInput)}
+                    leftIcon={<RefreshCcw className="h-4 w-4" />}
+                  >
+                    Try my report again
+                  </Button>
+                  <a className="inline-flex min-h-11 items-center px-2 font-semibold text-jung-accent hover:underline" href={`mailto:${SUPPORT_EMAIL}?subject=Help%20with%20my%20paid%20TypeJung%20report`}>
+                    Get help or request a refund
+                  </a>
+                </div>
               </div>
             )}
 

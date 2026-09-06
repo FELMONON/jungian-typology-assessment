@@ -5,6 +5,8 @@ interface GenerateTextOptions {
   temperature?: number;
   maxOutputTokens?: number;
   responseMimeType?: string;
+  thinkingBudget?: number;
+  timeoutMs?: number;
 }
 
 let integrationClient: GoogleGenAI | null = null;
@@ -59,6 +61,8 @@ export async function generateGeminiText(prompt: string, options: GenerateTextOp
           temperature: options.temperature,
           maxOutputTokens: options.maxOutputTokens,
           responseMimeType: options.responseMimeType,
+          ...(options.thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget: options.thinkingBudget } } : {}),
+          ...(options.timeoutMs !== undefined ? { httpOptions: { timeout: options.timeoutMs } } : {}),
         },
       });
 

@@ -1,17 +1,6 @@
 import { useState, useCallback } from 'react';
-
-export interface PremiumAnalysis {
-  overview: string;
-  functionAnalysis: string;
-  archetypes: string;
-  theGrip: string;
-  relationships: string;
-  career: string;
-  individuation: string;
-  shadow: string;
-  growth: string;
-  dreams: string;
-}
+import { readCompletePremiumReport, type PremiumAnalysis } from '../lib/premium-report';
+export type { PremiumAnalysis } from '../lib/premium-report';
 
 export interface FunctionScore {
   function: string;
@@ -92,8 +81,10 @@ export function useAiAnalysis() {
       }
 
       const data = await response.json();
-      setPremiumAnalysis(data.analysis);
-      return data.analysis;
+      const report = readCompletePremiumReport(data.analysis);
+      if (!report) throw new Error('Your personalized report is incomplete. Please try again later or contact support.');
+      setPremiumAnalysis(report);
+      return report;
     } catch (error: any) {
       setPremiumError(error.message);
       return null;
